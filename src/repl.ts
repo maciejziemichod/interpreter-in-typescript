@@ -1,6 +1,6 @@
 import readline from "readline";
 import { Lexer } from "./lexer";
-import { Token, TokenType } from "./token";
+import { TokenType } from "./token";
 
 export function startRepl(
     input: NodeJS.ReadableStream,
@@ -18,7 +18,7 @@ export function startRepl(
         const lexer = new Lexer(line);
 
         for (
-            let token: Token = lexer.getNextToken();
+            let token = lexer.getNextToken();
             token.type !== TokenType.EOF;
             token = lexer.getNextToken()
         ) {
