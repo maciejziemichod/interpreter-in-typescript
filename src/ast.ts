@@ -23,7 +23,7 @@ export class Program implements AstNode {
 }
 
 export class LetStatement implements Statement {
-    private token: Token;
+    public token: Token;
     public name: Identifier;
     private value: Expression;
 
@@ -34,8 +34,8 @@ export class LetStatement implements Statement {
     }
 }
 
-class Identifier implements Expression {
-    private token: Token;
+export class Identifier implements Expression {
+    public token: Token;
     public value: string;
 
     expressionNode(): void {}
