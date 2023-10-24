@@ -9,7 +9,7 @@ export interface Statement extends AstNode {
     statementNode(): void;
 }
 
-interface Expression extends AstNode {
+export interface Expression extends AstNode {
     expressionNode(): void;
 }
 
@@ -64,11 +64,11 @@ export class ReturnStatement implements Statement {
     }
 }
 
-export class ExpressionStatement implements Expression {
+export class ExpressionStatement implements Statement {
     public token: Token;
     public expression: Expression;
 
-    public expressionNode(): void {}
+    public statementNode(): void {}
 
     public getTokenLiteral(): string {
         return this.token.literal;
