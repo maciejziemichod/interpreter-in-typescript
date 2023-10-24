@@ -14,6 +14,18 @@ let foobar = 838383;
 
     const program = parser.parseProgram();
 
+    const errors = parser.getErrors();
+
+    try {
+        expect(errors.length).toBe(0);
+    } catch (_) {
+        throw new Error(
+            `Expected 0 errors during parsing, got ${
+                errors.length
+            } instead:\n${errors.join("\n")}`,
+        );
+    }
+
     expect(program).toBeDefined();
     expect(program.statements.length).toBe(3);
 
