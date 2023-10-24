@@ -1,6 +1,6 @@
 import { Token, TokenItem, TokenType, lookupIdentifier } from "./token";
 
-function newToken(tokenType: TokenItem, literal: string): Token {
+export function newToken(tokenType: TokenItem, literal: string): Token {
     return { type: tokenType, literal };
 }
 
