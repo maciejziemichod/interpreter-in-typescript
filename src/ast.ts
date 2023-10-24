@@ -15,7 +15,7 @@ interface Expression extends AstNode {
 export class Program implements AstNode {
     public statements: Statement[];
 
-    getTokenLiteral(): string {
+    public getTokenLiteral(): string {
         return this.statements.length > 0
             ? this.statements[0].getTokenLiteral()
             : "";
@@ -25,11 +25,11 @@ export class Program implements AstNode {
 export class LetStatement implements Statement {
     public token: Token;
     public name: Identifier;
-    private value: Expression;
+    public value: Expression;
 
-    statementNode(): void {}
+    public statementNode(): void {}
 
-    getTokenLiteral(): string {
+    public getTokenLiteral(): string {
         return this.token.literal;
     }
 }
@@ -38,9 +38,9 @@ export class Identifier implements Expression {
     public token: Token;
     public value: string;
 
-    expressionNode(): void {}
+    public expressionNode(): void {}
 
-    getTokenLiteral(): string {
+    public getTokenLiteral(): string {
         return this.token.literal;
     }
 }
