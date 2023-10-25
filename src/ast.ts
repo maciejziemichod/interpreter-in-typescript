@@ -93,3 +93,18 @@ export class Identifier implements Expression {
         return this.value;
     }
 }
+
+export class IntegerLiteral implements Expression {
+    public token: Token;
+    public value: number;
+
+    public expressionNode(): void {}
+
+    public getTokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    public string(): string {
+        return this.token.literal;
+    }
+}

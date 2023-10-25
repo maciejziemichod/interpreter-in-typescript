@@ -2,6 +2,7 @@ import {
     Expression,
     ExpressionStatement,
     Identifier,
+    IntegerLiteral,
     LetStatement,
     Program,
     ReturnStatement,
@@ -10,8 +11,8 @@ import {
 import { Lexer } from "./lexer";
 import { Token, TokenItem, TokenType } from "./token";
 
-type prefixParseFunction = () => Expression;
-type infixParseFunction = (expression: Expression) => Expression;
+type prefixParseFunction = () => Expression | null;
+type infixParseFunction = (expression: Expression) => Expression | null;
 
 const Precendence = {
     LOWEST: 1,
@@ -40,8 +41,10 @@ export class Parser {
         this.lexer = lexer;
 
         this.parseIdentifier = this.parseIdentifier.bind(this);
+        this.parseIntegerLiteral = this.parseIntegerLiteral.bind(this);
 
         this.registerPrefix(TokenType.IDENTIFIER, this.parseIdentifier);
+        this.registerPrefix(TokenType.INT, this.parseIntegerLiteral);
 
         this.nextToken();
         this.nextToken();
@@ -196,5 +199,24 @@ export class Parser {
         identifier.value = this.currentToken.literal;
 
         return identifier;
+    }
+
+    private parseIntegerLiteral(): Expression | null {
+        const integerLiteral = new IntegerLiteral();
+
+        integerLiteral.token = this.currentToken;
+
+        const value = parseInt(this.currentToken.literal, 10);
+
+        if (Number.isNaN(value)) {
+            this.errors.push(
+                `could not parse ${this.currentToken.literal} as integer`,
+            );
+            return null;
+        }
+
+        integerLiteral.value = value;
+
+        return integerLiteral;
     }
 }
