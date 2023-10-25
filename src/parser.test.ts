@@ -1,9 +1,10 @@
+import exp from "constants";
 import {
     ExpressionStatement,
     LetStatement,
     ReturnStatement,
-    Expression,
     Identifier,
+    IntegerLiteral,
 } from "./ast";
 import { Lexer } from "./lexer";
 import { Parser } from "./parser";
@@ -83,7 +84,6 @@ test("test identifier expressions", () => {
     expect(program.statements.length).toBe(1);
 
     const expression = program.statements[0];
-
     const isStatementExpression = expression instanceof ExpressionStatement;
 
     expect(isStatementExpression).toBe(true);
@@ -93,7 +93,6 @@ test("test identifier expressions", () => {
     }
 
     const identifier = expression.expression;
-
     const isExpressionIdentifier = identifier instanceof Identifier;
 
     expect(isExpressionIdentifier).toBe(true);
@@ -104,6 +103,40 @@ test("test identifier expressions", () => {
 
     expect(identifier.value).toBe("foobar");
     expect(identifier.getTokenLiteral()).toBe("foobar");
+});
+
+test("test integer literal expressions", () => {
+    const input = "5;";
+
+    const lexer = new Lexer(input);
+    const parser = new Parser(lexer);
+
+    const program = parser.parseProgram();
+
+    checkParserErrors(parser);
+
+    expect(program.statements.length).toBe(1);
+
+    const expression = program.statements[0];
+    const isStatementExpression = expression instanceof ExpressionStatement;
+
+    expect(isStatementExpression).toBe(true);
+
+    if (!isStatementExpression) {
+        return;
+    }
+
+    const integerLiteral = expression.expression;
+    const isExpressionIntegerLiteral = integerLiteral instanceof IntegerLiteral;
+
+    expect(isExpressionIntegerLiteral).toBe(true);
+
+    if (!isExpressionIntegerLiteral) {
+        return;
+    }
+
+    expect(integerLiteral.value).toBe(5);
+    expect(integerLiteral.getTokenLiteral()).toBe("5");
 });
 
 function checkParserErrors(parser: Parser): void {
