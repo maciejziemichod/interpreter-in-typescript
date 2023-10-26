@@ -108,3 +108,19 @@ export class IntegerLiteral implements Expression {
         return this.token.literal;
     }
 }
+
+export class PrefixExpression implements Expression {
+    public token: Token;
+    public operator: string;
+    public right: Expression | null;
+
+    public expressionNode(): void {}
+
+    public getTokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    public string(): string {
+        return `(${this.operator}${this.right?.string()})`;
+    }
+}

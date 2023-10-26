@@ -4,6 +4,7 @@ import {
     Identifier,
     IntegerLiteral,
     LetStatement,
+    PrefixExpression,
     Program,
     ReturnStatement,
     Statement,
@@ -42,9 +43,12 @@ export class Parser {
 
         this.parseIdentifier = this.parseIdentifier.bind(this);
         this.parseIntegerLiteral = this.parseIntegerLiteral.bind(this);
+        this.parsePrefixExpression = this.parsePrefixExpression.bind(this);
 
         this.registerPrefix(TokenType.IDENTIFIER, this.parseIdentifier);
         this.registerPrefix(TokenType.INT, this.parseIntegerLiteral);
+        this.registerPrefix(TokenType.BANG, this.parsePrefixExpression);
+        this.registerPrefix(TokenType.MINUS, this.parsePrefixExpression);
 
         this.nextToken();
         this.nextToken();
@@ -152,10 +156,15 @@ export class Parser {
         return statement;
     }
 
+    private noPrefixParseFunctions(type: TokenItem): void {
+        this.errors.push(`no prefix parse function for ${type} found`);
+    }
+
     private parseExpression(precendence: PrecendenceValue): Expression | null {
         const prefix = this.prefixParseFunctions[this.currentToken.type];
 
         if (prefix === undefined) {
+            this.noPrefixParseFunctions(this.currentToken.type);
             return null;
         }
 
@@ -218,5 +227,17 @@ export class Parser {
         integerLiteral.value = value;
 
         return integerLiteral;
+    }
+
+    private parsePrefixExpression(): Expression | null {
+        const expression = new PrefixExpression();
+        expression.token = this.currentToken;
+        expression.operator = this.currentToken.literal;
+
+        this.nextToken();
+
+        expression.right = this.parseExpression(Precendence.PREFIX);
+
+        return expression;
     }
 }
