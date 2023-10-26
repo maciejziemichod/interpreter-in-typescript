@@ -5,6 +5,8 @@ import {
     ReturnStatement,
     Identifier,
     IntegerLiteral,
+    Expression,
+    PrefixExpression,
 } from "./ast";
 import { Lexer } from "./lexer";
 import { Parser } from "./parser";
@@ -139,6 +141,47 @@ test("test integer literal expressions", () => {
     expect(integerLiteral.getTokenLiteral()).toBe("5");
 });
 
+test("test parsing prefix expressions", () => {
+    const tests: [string, string, number][] = [
+        ["!5", "!", 5],
+        ["-15", "-", 15],
+    ];
+
+    tests.forEach(([input, operator, integerValue]) => {
+        const lexer = new Lexer(input);
+        const parser = new Parser(lexer);
+
+        const program = parser.parseProgram();
+
+        checkParserErrors(parser);
+
+        expect(program.statements.length).toBe(1);
+
+        const expression = program.statements[0];
+        const isStatementExpression = expression instanceof ExpressionStatement;
+
+        expect(isStatementExpression).toBe(true);
+
+        if (!isStatementExpression) {
+            return;
+        }
+
+        const prefixExpression = expression.expression;
+        const isExpressionPrefixExpression =
+            prefixExpression instanceof PrefixExpression;
+
+        expect(isExpressionPrefixExpression).toBe(true);
+
+        if (!isExpressionPrefixExpression) {
+            return;
+        }
+
+        expect(prefixExpression.operator).toBe(operator);
+
+        testIntegerLiteral(prefixExpression.right, integerValue);
+    });
+});
+
 function checkParserErrors(parser: Parser): void {
     const errors = parser.getErrors();
 
@@ -151,4 +194,20 @@ function checkParserErrors(parser: Parser): void {
             } instead:\n${errors.join("\n")}`,
         );
     }
+}
+
+function testIntegerLiteral(
+    integerLiteral: Expression | null,
+    value: number,
+): void {
+    const isExpressionIntegerLiteral = integerLiteral instanceof IntegerLiteral;
+
+    expect(isExpressionIntegerLiteral).toBe(true);
+
+    if (!isExpressionIntegerLiteral) {
+        return;
+    }
+
+    expect(integerLiteral.value).toBe(value);
+    expect(integerLiteral.getTokenLiteral()).toBe(value.toString());
 }
