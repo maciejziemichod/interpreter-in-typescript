@@ -8,6 +8,7 @@ import {
     PrefixExpression,
     InfixExpression,
     Statement,
+    BooleanLiteral,
 } from "./ast";
 import { Lexer } from "./lexer";
 import { Parser } from "./parser";
@@ -139,9 +140,11 @@ test("test integer literal expressions", () => {
 });
 
 test("test parsing prefix expressions", () => {
-    const tests: [string, string, number][] = [
+    const tests: [string, string, number | boolean][] = [
         ["!5", "!", 5],
         ["-15", "-", 15],
+        ["!true;", "!", true],
+        ["!false;", "!", false],
     ];
 
     tests.forEach(([input, operator, integerValue]) => {
@@ -179,7 +182,7 @@ test("test parsing prefix expressions", () => {
 });
 
 test("test parsing infix expressions", () => {
-    const tests: [string, number, string, number][] = [
+    const tests: [string, number | boolean, string, number | boolean][] = [
         ["5 + 5;", 5, "+", 5],
         ["5 - 5;", 5, "-", 5],
         ["5 * 5;", 5, "*", 5],
@@ -188,6 +191,9 @@ test("test parsing infix expressions", () => {
         ["5 < 5;", 5, "<", 5],
         ["5 == 5;", 5, "==", 5],
         ["5 != 5;", 5, "!=", 5],
+        ["true == true", true, "==", true],
+        ["true != false", true, "!=", false],
+        ["false == false", false, "==", false],
     ];
 
     tests.forEach(([input, leftValue, operator, rightValue]) => {
@@ -235,6 +241,10 @@ test("test operator precedence parsing", () => {
             "3 + 4 * 5 == 3 * 1 + 4 * 5",
             "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
         ],
+        ["true", "true"],
+        ["false", "false"],
+        ["3 > 5 == false", "((3 > 5) == false)"],
+        ["3 < 5 == true", "((3 < 5) == true)"],
     ];
 
     tests.forEach(([input, expected]) => {
@@ -246,6 +256,44 @@ test("test operator precedence parsing", () => {
         checkParserErrors(parser);
 
         expect(program.string()).toBe(expected);
+    });
+});
+
+test("test boolean literal expressions", () => {
+    const tests: [string, boolean][] = [
+        ["true;", true],
+        ["false;", false],
+    ];
+
+    tests.forEach(([input, expectedBoolean]) => {
+        const lexer = new Lexer(input);
+        const parser = new Parser(lexer);
+
+        const program = parser.parseProgram();
+
+        checkParserErrors(parser);
+        expect(program.statements.length).toBe(1);
+
+        const expression = program.statements[0];
+        const isStatementExpression = expression instanceof ExpressionStatement;
+
+        expect(isStatementExpression).toBe(true);
+
+        if (!isStatementExpression) {
+            return;
+        }
+
+        const booleanLiteral = expression.expression;
+        const isExpressionBooleanLiteral =
+            booleanLiteral instanceof BooleanLiteral;
+
+        expect(isExpressionBooleanLiteral).toBe(true);
+
+        if (!isExpressionBooleanLiteral) {
+            return;
+        }
+
+        expect(booleanLiteral.value).toBe(expectedBoolean);
     });
 });
 
@@ -303,6 +351,9 @@ function testLiteralExpression(
         case "number":
             testIntegerLiteral(expression, expected);
             break;
+        case "boolean":
+            testBooleanLiteral(expression, expected);
+            break;
         default:
             throw new Error(
                 `type of expression not handled, got ${typeof expected}`,
@@ -342,4 +393,20 @@ function testLetStatement(statement: Statement, name: string): void {
 
     expect(statement.name.value).toBe(name);
     expect(statement.name.getTokenLiteral()).toBe(name);
+}
+
+function testBooleanLiteral(
+    expression: Expression | null,
+    value: boolean,
+): void {
+    const isExpressionBooleanLiteral = expression instanceof BooleanLiteral;
+
+    expect(isExpressionBooleanLiteral).toBe(true);
+
+    if (!isExpressionBooleanLiteral) {
+        return;
+    }
+
+    expect(expression.value).toBe(value);
+    expect(expression.getTokenLiteral()).toBe(String(value));
 }
