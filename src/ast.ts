@@ -141,3 +141,18 @@ export class InfixExpression implements Expression {
         } ${this.right?.string()})`;
     }
 }
+
+export class BooleanLiteral implements Expression {
+    public token: Token;
+    public value: boolean;
+
+    public expressionNode(): void {}
+
+    public getTokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    public string(): string {
+        return this.token.literal;
+    }
+}

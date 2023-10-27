@@ -1,4 +1,5 @@
 import {
+    BooleanLiteral,
     Expression,
     ExpressionStatement,
     Identifier,
@@ -57,11 +58,14 @@ export class Parser {
         this.parseIntegerLiteral = this.parseIntegerLiteral.bind(this);
         this.parsePrefixExpression = this.parsePrefixExpression.bind(this);
         this.parseInfixExpression = this.parseInfixExpression.bind(this);
+        this.parseBooleanLiteral = this.parseBooleanLiteral.bind(this);
 
         this.registerPrefix(TokenType.IDENTIFIER, this.parseIdentifier);
         this.registerPrefix(TokenType.INT, this.parseIntegerLiteral);
         this.registerPrefix(TokenType.BANG, this.parsePrefixExpression);
         this.registerPrefix(TokenType.MINUS, this.parsePrefixExpression);
+        this.registerPrefix(TokenType.TRUE, this.parseBooleanLiteral);
+        this.registerPrefix(TokenType.FALSE, this.parseBooleanLiteral);
 
         this.registerInfix(TokenType.PLUS, this.parseInfixExpression);
         this.registerInfix(TokenType.MINUS, this.parseInfixExpression);
@@ -290,6 +294,14 @@ export class Parser {
         expression.right = this.parseExpression(precedence);
 
         return expression;
+    }
+
+    private parseBooleanLiteral(): Expression {
+        const booleanLiteral = new BooleanLiteral();
+        booleanLiteral.token = this.currentToken;
+        booleanLiteral.value = this.currentTokenIs(TokenType.TRUE);
+
+        return booleanLiteral;
     }
 
     private getPeekPrecedence(): PrecendenceValue {
