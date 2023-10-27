@@ -164,7 +164,6 @@ export class Parser {
 
         const expression = this.parseExpression(Precendence.LOWEST);
 
-        // TODO or maybe make expression field allow null
         if (expression === null) {
             return null;
         }

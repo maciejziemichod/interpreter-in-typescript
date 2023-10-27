@@ -1,4 +1,3 @@
-import exp from "constants";
 import {
     ExpressionStatement,
     LetStatement,
@@ -8,69 +7,66 @@ import {
     Expression,
     PrefixExpression,
     InfixExpression,
+    Statement,
 } from "./ast";
 import { Lexer } from "./lexer";
 import { Parser } from "./parser";
 
-test("test LetStatement", () => {
-    const input = `
-let x = 5;
-let y = 10;
-let foobar = 838383;
-`;
+test("test let statement", () => {
+    const tests: [string, string, number][] = [
+        ["let x = 5;", "x", 5],
+        ["let y = 10;", "y", 10],
+        ["let foobar = 838383;", "foobar", 838383],
+    ];
 
-    const lexer = new Lexer(input);
-    const parser = new Parser(lexer);
+    tests.forEach(([input, expectedIdentifier, expectedValue]) => {
+        const lexer = new Lexer(input);
+        const parser = new Parser(lexer);
 
-    const program = parser.parseProgram();
+        const program = parser.parseProgram();
 
-    checkParserErrors(parser);
+        checkParserErrors(parser);
 
-    expect(program).toBeDefined();
-    expect(program.statements.length).toBe(3);
+        expect(program.statements.length).toBe(1);
 
-    const tests = ["x", "y", "foobar"];
+        const statement = program.statements[0];
 
-    tests.forEach((expectedIdentifier, index) => {
-        const statement = program.statements[index];
-
-        expect(statement.getTokenLiteral()).toBe("let");
-
-        const isLetStatement = statement instanceof LetStatement;
-
-        expect(isLetStatement).toBe(true);
-
-        if (!isLetStatement) {
-            return;
-        }
-
-        expect(statement.name.value).toBe(expectedIdentifier);
-        expect(statement.name.getTokenLiteral()).toBe(expectedIdentifier);
+        testLetStatement(statement, expectedIdentifier);
+        // TODO uncomment once handled
+        // testLiteralExpression(statement.value, expectedValue);
     });
 });
 
-test("test ReturnStatement", () => {
-    const input = `
-return 5;
-return 10;
-return 993322;
-`;
-    const lexer = new Lexer(input);
-    const parser = new Parser(lexer);
+test("test return statement", () => {
+    const tests: [string, number][] = [
+        ["return 5;", 5],
+        ["return 10;", 10],
+        ["return 993322;", 993322],
+    ];
 
-    const program = parser.parseProgram();
+    tests.forEach(([input, expectedValue]) => {
+        const lexer = new Lexer(input);
+        const parser = new Parser(lexer);
 
-    checkParserErrors(parser);
+        const program = parser.parseProgram();
 
-    expect(program).toBeDefined();
-    expect(program.statements.length).toBe(3);
+        checkParserErrors(parser);
 
-    program.statements.forEach((statement) => {
-        expect(statement.getTokenLiteral()).toBe("return");
+        expect(program.statements.length).toBe(1);
 
-        const isReturnStatement = statement instanceof ReturnStatement;
+        const returnStatement = program.statements[0];
+        const isStatementReturnStatement =
+            returnStatement instanceof ReturnStatement;
 
-        expect(isReturnStatement).toBe(true);
+        expect(isStatementReturnStatement).toBe(true);
+        expect(returnStatement.getTokenLiteral()).toBe("return");
+
+        if (!isStatementReturnStatement) {
+            return;
+        }
+
+        // TODO uncomment once handled
+        // testLiteralExpression(returnStatement.returnValue, expectedValue);
     });
 });
 
@@ -178,8 +174,7 @@ test("test parsing prefix expressions", () => {
         }
 
         expect(prefixExpression.operator).toBe(operator);
-
-        testIntegerLiteral(prefixExpression.right, integerValue);
+        testLiteralExpression(prefixExpression.right, integerValue);
     });
 });
 
@@ -214,19 +209,12 @@ test("test parsing infix expressions", () => {
             return;
         }
 
-        const infixExpression = expression.expression;
-        const isExpressionInfixExpression =
-            infixExpression instanceof InfixExpression;
-
-        expect(isExpressionInfixExpression).toBe(true);
-
-        if (!isExpressionInfixExpression) {
-            return;
-        }
-
-        testIntegerLiteral(infixExpression.left, leftValue);
-        testIntegerLiteral(infixExpression.right, rightValue);
-        expect(infixExpression.operator).toBe(operator);
+        testInfixExpression(
+            expression.expression,
+            leftValue,
+            operator,
+            rightValue,
+        );
     });
 });
 
@@ -289,4 +277,69 @@ function testIntegerLiteral(
 
     expect(integerLiteral.value).toBe(value);
     expect(integerLiteral.getTokenLiteral()).toBe(value.toString());
+}
+
+function testIdentifier(identifier: Expression | null, value: string): void {
+    const isExpressionIdentifier = identifier instanceof Identifier;
+
+    expect(isExpressionIdentifier).toBe(true);
+
+    if (!isExpressionIdentifier) {
+        return;
+    }
+
+    expect(identifier.value).toBe(value);
+    expect(identifier.getTokenLiteral()).toBe(value);
+}
+
+function testLiteralExpression(
+    expression: Expression | null,
+    expected: any,
+): void {
+    switch (typeof expected) {
+        case "string":
+            testIdentifier(expression, expected);
+            break;
+        case "number":
+            testIntegerLiteral(expression, expected);
+            break;
+        default:
+            throw new Error(
+                `type of expression not handled, got ${typeof expected}`,
+            );
+    }
+}
+
+function testInfixExpression(
+    expression: Expression | null,
+    left: any,
+    operator: string,
+    right: any,
+): void {
+    const isExpressionInfixExpression = expression instanceof InfixExpression;
+
+    expect(isExpressionInfixExpression).toBe(true);
+
+    if (!isExpressionInfixExpression) {
+        return;
+    }
+
+    testLiteralExpression(expression.left, left);
+    expect(expression.operator).toBe(operator);
+    testLiteralExpression(expression.right, right);
+}
+
+function testLetStatement(statement: Statement, name: string): void {
+    expect(statement.getTokenLiteral()).toBe("let");
+
+    const isLetStatement = statement instanceof LetStatement;
+
+    expect(isLetStatement).toBe(true);
+
+    if (!isLetStatement) {
+        return;
+    }
+
+    expect(statement.name.value).toBe(name);
+    expect(statement.name.getTokenLiteral()).toBe(name);
 }
