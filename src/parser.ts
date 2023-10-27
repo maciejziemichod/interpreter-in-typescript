@@ -59,6 +59,7 @@ export class Parser {
         this.parsePrefixExpression = this.parsePrefixExpression.bind(this);
         this.parseInfixExpression = this.parseInfixExpression.bind(this);
         this.parseBooleanLiteral = this.parseBooleanLiteral.bind(this);
+        this.parseGroupedExpression = this.parseGroupedExpression.bind(this);
 
         this.registerPrefix(TokenType.IDENTIFIER, this.parseIdentifier);
         this.registerPrefix(TokenType.INT, this.parseIntegerLiteral);
@@ -66,6 +67,10 @@ export class Parser {
         this.registerPrefix(TokenType.MINUS, this.parsePrefixExpression);
         this.registerPrefix(TokenType.TRUE, this.parseBooleanLiteral);
         this.registerPrefix(TokenType.FALSE, this.parseBooleanLiteral);
+        this.registerPrefix(
+            TokenType.LEFT_PARENTHESIS,
+            this.parseGroupedExpression,
+        );
 
         this.registerInfix(TokenType.PLUS, this.parseInfixExpression);
         this.registerInfix(TokenType.MINUS, this.parseInfixExpression);
@@ -302,6 +307,18 @@ export class Parser {
         booleanLiteral.value = this.currentTokenIs(TokenType.TRUE);
 
         return booleanLiteral;
+    }
+
+    private parseGroupedExpression(): Expression | null {
+        this.nextToken();
+
+        const expression = this.parseExpression(Precendence.LOWEST);
+
+        if (!this.expectPeek(TokenType.RIGHT_PARENTHESIS)) {
+            return null;
+        }
+
+        return expression;
     }
 
     private getPeekPrecedence(): PrecendenceValue {
