@@ -2,6 +2,7 @@ import {
     Expression,
     ExpressionStatement,
     Identifier,
+    InfixExpression,
     IntegerLiteral,
     LetStatement,
     PrefixExpression,
@@ -13,7 +14,7 @@ import { Lexer } from "./lexer";
 import { Token, TokenItem, TokenType } from "./token";
 
 type prefixParseFunction = () => Expression | null;
-type infixParseFunction = (expression: Expression) => Expression | null;
+type infixParseFunction = (expression: Expression | null) => Expression | null;
 
 const Precendence = {
     LOWEST: 1,
@@ -25,6 +26,17 @@ const Precendence = {
     CALL: 7, // myFunction(X)
 } as const;
 type PrecendenceValue = (typeof Precendence)[keyof typeof Precendence];
+
+const precedences = {
+    [TokenType.EQUAL]: Precendence.EQUALS,
+    [TokenType.NOT_EQUAL]: Precendence.EQUALS,
+    [TokenType.LESS_THAN]: Precendence.LESS_GREATER,
+    [TokenType.GREATER_THAN]: Precendence.LESS_GREATER,
+    [TokenType.PLUS]: Precendence.SUM,
+    [TokenType.MINUS]: Precendence.SUM,
+    [TokenType.SLASH]: Precendence.PRODUCT,
+    [TokenType.ASTERISK]: Precendence.PRODUCT,
+} as const;
 
 export class Parser {
     private lexer: Lexer;
@@ -44,11 +56,21 @@ export class Parser {
         this.parseIdentifier = this.parseIdentifier.bind(this);
         this.parseIntegerLiteral = this.parseIntegerLiteral.bind(this);
         this.parsePrefixExpression = this.parsePrefixExpression.bind(this);
+        this.parseInfixExpression = this.parseInfixExpression.bind(this);
 
         this.registerPrefix(TokenType.IDENTIFIER, this.parseIdentifier);
         this.registerPrefix(TokenType.INT, this.parseIntegerLiteral);
         this.registerPrefix(TokenType.BANG, this.parsePrefixExpression);
         this.registerPrefix(TokenType.MINUS, this.parsePrefixExpression);
+
+        this.registerInfix(TokenType.PLUS, this.parseInfixExpression);
+        this.registerInfix(TokenType.MINUS, this.parseInfixExpression);
+        this.registerInfix(TokenType.ASTERISK, this.parseInfixExpression);
+        this.registerInfix(TokenType.SLASH, this.parseInfixExpression);
+        this.registerInfix(TokenType.EQUAL, this.parseInfixExpression);
+        this.registerInfix(TokenType.NOT_EQUAL, this.parseInfixExpression);
+        this.registerInfix(TokenType.LESS_THAN, this.parseInfixExpression);
+        this.registerInfix(TokenType.GREATER_THAN, this.parseInfixExpression);
 
         this.nextToken();
         this.nextToken();
@@ -168,7 +190,22 @@ export class Parser {
             return null;
         }
 
-        const leftExpression = prefix();
+        let leftExpression = prefix();
+
+        while (
+            !this.peekTokenIs(TokenType.SEMICOLON) &&
+            precendence < this.getPeekPrecedence()
+        ) {
+            const infix = this.infixParseFunctions[this.peekToken.type];
+
+            if (infix === undefined) {
+                return leftExpression;
+            }
+
+            this.nextToken();
+
+            leftExpression = infix(leftExpression);
+        }
 
         return leftExpression;
     }
@@ -239,5 +276,36 @@ export class Parser {
         expression.right = this.parseExpression(Precendence.PREFIX);
 
         return expression;
+    }
+
+    private parseInfixExpression(left: Expression | null): Expression | null {
+        const expression = new InfixExpression();
+        expression.token = this.currentToken;
+        expression.operator = this.currentToken.literal;
+        expression.left = left;
+
+        const precedence = this.getCurrentPrecedence();
+
+        this.nextToken();
+
+        expression.right = this.parseExpression(precedence);
+
+        return expression;
+    }
+
+    private getPeekPrecedence(): PrecendenceValue {
+        if (this.peekToken.type in precedences) {
+            return precedences[this.peekToken.type];
+        }
+
+        return Precendence.LOWEST;
+    }
+
+    private getCurrentPrecedence(): PrecendenceValue {
+        if (this.currentToken.type in precedences) {
+            return precedences[this.currentToken.type];
+        }
+
+        return Precendence.LOWEST;
     }
 }

@@ -124,3 +124,22 @@ export class PrefixExpression implements Expression {
         return `(${this.operator}${this.right?.string()})`;
     }
 }
+
+export class InfixExpression implements Expression {
+    public token: Token;
+    public left: Expression | null;
+    public operator: string;
+    public right: Expression | null;
+
+    public expressionNode(): void {}
+
+    public getTokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    public string(): string {
+        return `(${this.left?.string()} ${
+            this.operator
+        } ${this.right?.string()})`;
+    }
+}
