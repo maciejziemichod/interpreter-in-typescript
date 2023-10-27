@@ -23,9 +23,7 @@ export class Program implements AstNode {
     }
 
     public string(): string {
-        return this.statements
-            .map((statement) => statement.string())
-            .join("\n");
+        return this.statements.map((statement) => statement.string()).join("");
     }
 }
 
