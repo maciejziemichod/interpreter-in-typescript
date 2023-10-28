@@ -156,3 +156,41 @@ export class BooleanLiteral implements Expression {
         return this.token.literal;
     }
 }
+
+export class IfExpression implements Expression {
+    public token: Token;
+    public condition: Expression;
+    public consequence: BlockStatement;
+    public alternative: BlockStatement | null;
+
+    public expressionNode(): void {}
+
+    public getTokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    public string(): string {
+        let string = `if ${this.condition.string()} ${this.consequence.string()}`;
+
+        if (this.alternative !== null) {
+            string += ` else ${this.alternative.string()}`;
+        }
+
+        return string;
+    }
+}
+
+export class BlockStatement implements Statement {
+    public token: Token;
+    public statements: Statement[];
+
+    public statementNode(): void {}
+
+    public getTokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    public string(): string {
+        return this.statements.map((statement) => statement.string()).join("");
+    }
+}

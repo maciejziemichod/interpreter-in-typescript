@@ -1,8 +1,10 @@
 import {
+    BlockStatement,
     BooleanLiteral,
     Expression,
     ExpressionStatement,
     Identifier,
+    IfExpression,
     InfixExpression,
     IntegerLiteral,
     LetStatement,
@@ -60,6 +62,7 @@ export class Parser {
         this.parseInfixExpression = this.parseInfixExpression.bind(this);
         this.parseBooleanLiteral = this.parseBooleanLiteral.bind(this);
         this.parseGroupedExpression = this.parseGroupedExpression.bind(this);
+        this.parseIfExpression = this.parseIfExpression.bind(this);
 
         this.registerPrefix(TokenType.IDENTIFIER, this.parseIdentifier);
         this.registerPrefix(TokenType.INT, this.parseIntegerLiteral);
@@ -71,6 +74,7 @@ export class Parser {
             TokenType.LEFT_PARENTHESIS,
             this.parseGroupedExpression,
         );
+        this.registerPrefix(TokenType.IF, this.parseIfExpression);
 
         this.registerInfix(TokenType.PLUS, this.parseInfixExpression);
         this.registerInfix(TokenType.MINUS, this.parseInfixExpression);
@@ -319,6 +323,70 @@ export class Parser {
         }
 
         return expression;
+    }
+
+    private parseIfExpression(): Expression | null {
+        const expression = new IfExpression();
+        expression.token = this.currentToken;
+
+        if (!this.expectPeek(TokenType.LEFT_PARENTHESIS)) {
+            return null;
+        }
+
+        this.nextToken();
+
+        const condition = this.parseExpression(Precendence.LOWEST);
+
+        if (condition === null) {
+            return null;
+        }
+
+        expression.condition = condition;
+
+        if (!this.expectPeek(TokenType.RIGHT_PARENTHESIS)) {
+            return null;
+        }
+
+        if (!this.expectPeek(TokenType.LEFT_BRACE)) {
+            return null;
+        }
+
+        expression.consequence = this.parseBlockStatement();
+
+        if (this.peekTokenIs(TokenType.ELSE)) {
+            this.nextToken();
+
+            if (!this.expectPeek(TokenType.LEFT_BRACE)) {
+                return null;
+            }
+
+            expression.alternative = this.parseBlockStatement();
+        }
+
+        return expression;
+    }
+
+    private parseBlockStatement(): BlockStatement {
+        const blockStatement = new BlockStatement();
+        blockStatement.token = this.currentToken;
+        blockStatement.statements = [];
+
+        this.nextToken();
+
+        while (
+            !this.currentTokenIs(TokenType.RIGHT_BRACE) &&
+            !this.currentTokenIs(TokenType.EOF)
+        ) {
+            const statement = this.parseStatement();
+
+            if (statement !== null) {
+                blockStatement.statements.push(statement);
+            }
+
+            this.nextToken();
+        }
+
+        return blockStatement;
     }
 
     private getPeekPrecedence(): PrecendenceValue {
