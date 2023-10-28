@@ -340,9 +340,9 @@ test("test if expressions", () => {
     }
 
     testInfixExpression(ifExpression.condition, "x", "<", "y");
-    expect(ifExpression.consequence.statements.length).toBe(1);
+    expect(ifExpression.consequence?.statements.length).toBe(1);
 
-    const consequence = ifExpression.consequence.statements[0];
+    const consequence = ifExpression.consequence?.statements[0];
     const isConsequenceExpression = consequence instanceof ExpressionStatement;
 
     expect(isConsequenceExpression).toBe(true);
@@ -352,7 +352,7 @@ test("test if expressions", () => {
     }
 
     testIdentifier(consequence.expression, "x");
-    expect(ifExpression.alternative).not.toBeDefined();
+    expect(ifExpression.alternative).toBeNull();
 });
 
 test("test if else expressions", () => {
@@ -386,9 +386,9 @@ test("test if else expressions", () => {
     }
 
     testInfixExpression(ifExpression.condition, "x", "<", "y");
-    expect(ifExpression.consequence.statements.length).toBe(1);
+    expect(ifExpression.consequence?.statements.length).toBe(1);
 
-    const consequence = ifExpression.consequence.statements[0];
+    const consequence = ifExpression.consequence?.statements[0];
     const isConsequenceExpression = consequence instanceof ExpressionStatement;
 
     expect(isConsequenceExpression).toBe(true);
@@ -458,9 +458,9 @@ test("test function literal parsing", () => {
     expect(parameters.length).toBe(2);
     testLiteralExpression(parameters[0], "x");
     testLiteralExpression(parameters[1], "y");
-    expect(functionLiteral.body.statements.length).toBe(1);
+    expect(functionLiteral.body?.statements.length).toBe(1);
 
-    const bodyStatement = functionLiteral.body.statements[0];
+    const bodyStatement = functionLiteral.body?.statements[0];
     const isBodyStatementExpressionStatement =
         bodyStatement instanceof ExpressionStatement;
 
@@ -675,8 +675,8 @@ function testLetStatement(statement: Statement, name: string): void {
         return;
     }
 
-    expect(statement.name.value).toBe(name);
-    expect(statement.name.getTokenLiteral()).toBe(name);
+    expect(statement.name?.value).toBe(name);
+    expect(statement.name?.getTokenLiteral()).toBe(name);
 }
 
 function testBooleanLiteral(
