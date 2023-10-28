@@ -46,8 +46,8 @@ const precedences = {
 
 export class Parser {
     private lexer: Lexer;
-    private currentToken: Token;
-    private peekToken: Token;
+    private currentToken!: Token;
+    private peekToken!: Token;
     private errors: string[] = [];
     private prefixParseFunctions: Partial<{
         [key in TokenItem]: prefixParseFunction;
@@ -101,7 +101,6 @@ export class Parser {
 
     public parseProgram(): Program {
         const program = new Program();
-        program.statements = [];
 
         while (this.currentToken.type !== TokenType.EOF) {
             const statement = this.parseStatement();
@@ -143,16 +142,16 @@ export class Parser {
     }
 
     private parseLetStatement(): LetStatement | null {
-        const statement = new LetStatement();
-        statement.token = this.currentToken;
+        const statement = new LetStatement(this.currentToken);
 
         if (!this.expectPeek(TokenType.IDENTIFIER)) {
             return null;
         }
 
-        const name = new Identifier();
-        name.value = this.currentToken.literal;
-        name.token = this.currentToken;
+        const name = new Identifier(
+            this.currentToken,
+            this.currentToken.literal,
+        );
         statement.name = name;
 
         if (!this.expectPeek(TokenType.ASSIGN)) {
@@ -161,13 +160,7 @@ export class Parser {
 
         this.nextToken();
 
-        const expression = this.parseExpression(Precendence.LOWEST);
-
-        if (expression === null) {
-            return null;
-        }
-
-        statement.value = expression;
+        statement.value = this.parseExpression(Precendence.LOWEST);
 
         if (this.peekTokenIs(TokenType.SEMICOLON)) {
             this.nextToken();
@@ -177,18 +170,11 @@ export class Parser {
     }
 
     private parseReturnStatement(): ReturnStatement | null {
-        const statement = new ReturnStatement();
-        statement.token = this.currentToken;
+        const statement = new ReturnStatement(this.currentToken);
 
         this.nextToken();
 
-        const expression = this.parseExpression(Precendence.LOWEST);
-
-        if (expression === null) {
-            return null;
-        }
-
-        statement.returnValue = expression;
+        statement.returnValue = this.parseExpression(Precendence.LOWEST);
 
         if (this.peekTokenIs(TokenType.SEMICOLON)) {
             this.nextToken();
@@ -198,16 +184,8 @@ export class Parser {
     }
 
     private parseExpressionStatement(): ExpressionStatement | null {
-        const statement = new ExpressionStatement();
-        statement.token = this.currentToken;
-
-        const expression = this.parseExpression(Precendence.LOWEST);
-
-        if (expression === null) {
-            return null;
-        }
-
-        statement.expression = expression;
+        const statement = new ExpressionStatement(this.currentToken);
+        statement.expression = this.parseExpression(Precendence.LOWEST);
 
         if (this.peekTokenIs(TokenType.SEMICOLON)) {
             this.nextToken();
@@ -278,17 +256,16 @@ export class Parser {
     }
 
     private parseIdentifier(): Expression {
-        const identifier = new Identifier();
-        identifier.token = this.currentToken;
-        identifier.value = this.currentToken.literal;
+        const identifier = new Identifier(
+            this.currentToken,
+            this.currentToken.literal,
+        );
 
         return identifier;
     }
 
     private parseIntegerLiteral(): Expression | null {
-        const integerLiteral = new IntegerLiteral();
-
-        integerLiteral.token = this.currentToken;
+        const integerLiteral = new IntegerLiteral(this.currentToken);
 
         const value = parseInt(this.currentToken.literal, 10);
 
@@ -305,9 +282,10 @@ export class Parser {
     }
 
     private parsePrefixExpression(): Expression | null {
-        const expression = new PrefixExpression();
-        expression.token = this.currentToken;
-        expression.operator = this.currentToken.literal;
+        const expression = new PrefixExpression(
+            this.currentToken,
+            this.currentToken.literal,
+        );
 
         this.nextToken();
 
@@ -317,11 +295,11 @@ export class Parser {
     }
 
     private parseInfixExpression(left: Expression | null): Expression | null {
-        const expression = new InfixExpression();
-        expression.token = this.currentToken;
-        expression.operator = this.currentToken.literal;
-        expression.left = left;
-
+        const expression = new InfixExpression(
+            this.currentToken,
+            this.currentToken.literal,
+            left,
+        );
         const precedence = this.getCurrentPrecedence();
 
         this.nextToken();
@@ -332,9 +310,10 @@ export class Parser {
     }
 
     private parseBooleanLiteral(): Expression {
-        const booleanLiteral = new BooleanLiteral();
-        booleanLiteral.token = this.currentToken;
-        booleanLiteral.value = this.currentTokenIs(TokenType.TRUE);
+        const booleanLiteral = new BooleanLiteral(
+            this.currentToken,
+            this.currentTokenIs(TokenType.TRUE),
+        );
 
         return booleanLiteral;
     }
@@ -352,8 +331,7 @@ export class Parser {
     }
 
     private parseIfExpression(): Expression | null {
-        const expression = new IfExpression();
-        expression.token = this.currentToken;
+        const expression = new IfExpression(this.currentToken);
 
         if (!this.expectPeek(TokenType.LEFT_PARENTHESIS)) {
             return null;
@@ -393,8 +371,7 @@ export class Parser {
     }
 
     private parseFunctionLiteral(): Expression | null {
-        const functionLiteral = new FunctionLiteral();
-        functionLiteral.token = this.currentToken;
+        const functionLiteral = new FunctionLiteral(this.currentToken);
 
         if (!this.expectPeek(TokenType.LEFT_PARENTHESIS)) {
             return null;
@@ -414,10 +391,11 @@ export class Parser {
     private parseCallExpression(
         expression: Expression | null,
     ): Expression | null {
-        const callExpression = new CallExpression();
-        callExpression.token = this.currentToken;
-        callExpression.expression = expression;
-        callExpression.arguments = this.parseCallArguments();
+        const callExpression = new CallExpression(
+            this.currentToken,
+            expression,
+            this.parseCallArguments(),
+        );
 
         return callExpression;
     }
@@ -467,9 +445,10 @@ export class Parser {
 
         this.nextToken();
 
-        const identifier = new Identifier();
-        identifier.token = this.currentToken;
-        identifier.value = this.currentToken.literal;
+        const identifier = new Identifier(
+            this.currentToken,
+            this.currentToken.literal,
+        );
 
         identifiers.push(identifier);
 
@@ -477,9 +456,10 @@ export class Parser {
             this.nextToken();
             this.nextToken();
 
-            const identifier = new Identifier();
-            identifier.token = this.currentToken;
-            identifier.value = this.currentToken.literal;
+            const identifier = new Identifier(
+                this.currentToken,
+                this.currentToken.literal,
+            );
 
             identifiers.push(identifier);
         }
@@ -492,9 +472,7 @@ export class Parser {
     }
 
     private parseBlockStatement(): BlockStatement {
-        const blockStatement = new BlockStatement();
-        blockStatement.token = this.currentToken;
-        blockStatement.statements = [];
+        const blockStatement = new BlockStatement(this.currentToken);
 
         this.nextToken();
 
@@ -516,7 +494,7 @@ export class Parser {
 
     private getPeekPrecedence(): PrecendenceValue {
         if (this.peekToken.type in precedences) {
-            return precedences[this.peekToken.type];
+            return precedences[this.peekToken.type as keyof typeof precedences];
         }
 
         return Precendence.LOWEST;
@@ -524,7 +502,9 @@ export class Parser {
 
     private getCurrentPrecedence(): PrecendenceValue {
         if (this.currentToken.type in precedences) {
-            return precedences[this.currentToken.type];
+            return precedences[
+                this.currentToken.type as keyof typeof precedences
+            ];
         }
 
         return Precendence.LOWEST;
