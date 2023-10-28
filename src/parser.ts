@@ -159,8 +159,17 @@ export class Parser {
             return null;
         }
 
-        // TODO expression
-        while (!this.currentTokenIs(TokenType.SEMICOLON)) {
+        this.nextToken();
+
+        const expression = this.parseExpression(Precendence.LOWEST);
+
+        if (expression === null) {
+            return null;
+        }
+
+        statement.value = expression;
+
+        if (this.peekTokenIs(TokenType.SEMICOLON)) {
             this.nextToken();
         }
 
@@ -173,8 +182,15 @@ export class Parser {
 
         this.nextToken();
 
-        // TODO expression
-        while (!this.currentTokenIs(TokenType.SEMICOLON)) {
+        const expression = this.parseExpression(Precendence.LOWEST);
+
+        if (expression === null) {
+            return null;
+        }
+
+        statement.returnValue = expression;
+
+        if (this.peekTokenIs(TokenType.SEMICOLON)) {
             this.nextToken();
         }
 
