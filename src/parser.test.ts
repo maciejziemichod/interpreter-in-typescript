@@ -10,6 +10,7 @@ import {
     Statement,
     BooleanLiteral,
     IfExpression,
+    FunctionLiteral,
 } from "./ast";
 import { Lexer } from "./lexer";
 import { Parser } from "./parser";
@@ -408,6 +409,88 @@ test("test if else expressions", () => {
     }
 
     testIdentifier(alternative.expression, "y");
+});
+
+test("test function literal parsing", () => {
+    const input = "fn(x, y) { x + y; }";
+
+    const lexer = new Lexer(input);
+    const parser = new Parser(lexer);
+
+    const program = parser.parseProgram();
+
+    checkParserErrors(parser);
+
+    expect(program.statements.length).toBe(1);
+
+    const expression = program.statements[0];
+    const isStatementExpression = expression instanceof ExpressionStatement;
+
+    expect(isStatementExpression).toBe(true);
+
+    if (!isStatementExpression) {
+        return;
+    }
+
+    const functionLiteral = expression.expression;
+    const isExpressionFunctionLiteral =
+        functionLiteral instanceof FunctionLiteral;
+
+    expect(isExpressionFunctionLiteral).toBe(true);
+
+    if (!isExpressionFunctionLiteral) {
+        return;
+    }
+
+    const parameters = functionLiteral.parameters;
+
+    expect(parameters).not.toBeNull();
+
+    if (parameters === null) {
+        return;
+    }
+
+    expect(parameters.length).toBe(2);
+    testLiteralExpression(parameters[0], "x");
+    testLiteralExpression(parameters[1], "y");
+    expect(functionLiteral.body.statements.length).toBe(1);
+
+    const bodyStatement = functionLiteral.body.statements[0];
+    const isBodyStatementExpressionStatement =
+        bodyStatement instanceof ExpressionStatement;
+
+    expect(isBodyStatementExpressionStatement).toBe(true);
+
+    if (isBodyStatementExpressionStatement) {
+        testInfixExpression(bodyStatement.expression, "x", "+", "y");
+    }
+});
+
+test("test function parameters parsing", () => {
+    const tests: [string, string[]][] = [
+        ["fn() {};", []],
+        ["fn(x) {};", ["x"]],
+        ["fn(x, y, z) {};", ["x", "y", "z"]],
+    ];
+
+    tests.forEach(([input, expectedParameters]) => {
+        const lexer = new Lexer(input);
+        const parser = new Parser(lexer);
+
+        const program = parser.parseProgram();
+
+        checkParserErrors(parser);
+
+        const expression = program.statements[0] as ExpressionStatement;
+        const functionLiteral = expression.expression as FunctionLiteral;
+        const parameters = functionLiteral.parameters as Identifier[];
+
+        expect(parameters.length).toBe(expectedParameters.length);
+
+        expectedParameters.forEach((identifier, index) => {
+            testLiteralExpression(parameters[index], identifier);
+        });
+    });
 });
 
 function checkParserErrors(parser: Parser): void {
