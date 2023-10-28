@@ -17,10 +17,10 @@ import { Lexer } from "./lexer";
 import { Parser } from "./parser";
 
 test("test let statement", () => {
-    const tests: [string, string, number][] = [
+    const tests: [string, string, any][] = [
         ["let x = 5;", "x", 5],
-        ["let y = 10;", "y", 10],
-        ["let foobar = 838383;", "foobar", 838383],
+        ["let y = true;", "y", true],
+        ["let foobar = y;", "foobar", "y"],
     ];
 
     tests.forEach(([input, expectedIdentifier, expectedValue]) => {
@@ -36,16 +36,15 @@ test("test let statement", () => {
         const statement = program.statements[0];
 
         testLetStatement(statement, expectedIdentifier);
-        // TODO uncomment once handled
-        // testLiteralExpression(statement.value, expectedValue);
+        testLiteralExpression((statement as LetStatement).value, expectedValue);
     });
 });
 
 test("test return statement", () => {
-    const tests: [string, number][] = [
+    const tests: [string, any][] = [
         ["return 5;", 5],
-        ["return 10;", 10],
-        ["return 993322;", 993322],
+        ["return true;", true],
+        ["return foobar;", "foobar"],
     ];
 
     tests.forEach(([input, expectedValue]) => {
@@ -69,8 +68,7 @@ test("test return statement", () => {
             return;
         }
 
-        // TODO uncomment once handled
-        // testLiteralExpression(returnStatement.returnValue, expectedValue);
+        testLiteralExpression(returnStatement.returnValue, expectedValue);
     });
 });
 
