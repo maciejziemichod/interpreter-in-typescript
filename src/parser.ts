@@ -3,6 +3,7 @@ import {
     BooleanLiteral,
     Expression,
     ExpressionStatement,
+    FunctionLiteral,
     Identifier,
     IfExpression,
     InfixExpression,
@@ -63,6 +64,7 @@ export class Parser {
         this.parseBooleanLiteral = this.parseBooleanLiteral.bind(this);
         this.parseGroupedExpression = this.parseGroupedExpression.bind(this);
         this.parseIfExpression = this.parseIfExpression.bind(this);
+        this.parseFunctionLiteral = this.parseFunctionLiteral.bind(this);
 
         this.registerPrefix(TokenType.IDENTIFIER, this.parseIdentifier);
         this.registerPrefix(TokenType.INT, this.parseIntegerLiteral);
@@ -75,6 +77,7 @@ export class Parser {
             this.parseGroupedExpression,
         );
         this.registerPrefix(TokenType.IF, this.parseIfExpression);
+        this.registerPrefix(TokenType.FUNCTION, this.parseFunctionLiteral);
 
         this.registerInfix(TokenType.PLUS, this.parseInfixExpression);
         this.registerInfix(TokenType.MINUS, this.parseInfixExpression);
@@ -364,6 +367,59 @@ export class Parser {
         }
 
         return expression;
+    }
+
+    private parseFunctionLiteral(): Expression | null {
+        const functionLiteral = new FunctionLiteral();
+        functionLiteral.token = this.currentToken;
+
+        if (!this.expectPeek(TokenType.LEFT_PARENTHESIS)) {
+            return null;
+        }
+
+        functionLiteral.parameters = this.parseFunctionParameters();
+
+        if (!this.expectPeek(TokenType.LEFT_BRACE)) {
+            return null;
+        }
+
+        functionLiteral.body = this.parseBlockStatement();
+
+        return functionLiteral;
+    }
+
+    private parseFunctionParameters(): Identifier[] | null {
+        const identifiers: Identifier[] = [];
+
+        if (this.peekTokenIs(TokenType.RIGHT_PARENTHESIS)) {
+            this.nextToken();
+            return identifiers;
+        }
+
+        this.nextToken();
+
+        const identifier = new Identifier();
+        identifier.token = this.currentToken;
+        identifier.value = this.currentToken.literal;
+
+        identifiers.push(identifier);
+
+        while (this.peekTokenIs(TokenType.COMMA)) {
+            this.nextToken();
+            this.nextToken();
+
+            const identifier = new Identifier();
+            identifier.token = this.currentToken;
+            identifier.value = this.currentToken.literal;
+
+            identifiers.push(identifier);
+        }
+
+        if (!this.expectPeek(TokenType.RIGHT_PARENTHESIS)) {
+            return null;
+        }
+
+        return identifiers;
     }
 
     private parseBlockStatement(): BlockStatement {

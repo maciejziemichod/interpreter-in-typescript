@@ -194,3 +194,21 @@ export class BlockStatement implements Statement {
         return this.statements.map((statement) => statement.string()).join("");
     }
 }
+
+export class FunctionLiteral implements Expression {
+    public token: Token;
+    public parameters: Identifier[] | null;
+    public body: BlockStatement;
+
+    public expressionNode(): void {}
+
+    public getTokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    public string(): string {
+        return `${this.token.literal}(${this.parameters
+            ?.map((parameter) => parameter.string())
+            .join(", ")}) ${this.body.string()}`;
+    }
+}
