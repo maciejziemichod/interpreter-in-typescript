@@ -212,3 +212,21 @@ export class FunctionLiteral implements Expression {
             .join(", ")}) ${this.body.string()}`;
     }
 }
+
+export class CallExpression implements Expression {
+    public token: Token; // '(' token
+    public expression: Expression | null; // identifier or function literal
+    public arguments: Expression[] | null;
+
+    public expressionNode(): void {}
+
+    public getTokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    public string(): string {
+        return `${this.expression?.string()}(${this.arguments
+            ?.map((argument) => argument.string())
+            .join(", ")})`;
+    }
+}
