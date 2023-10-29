@@ -1,11 +1,16 @@
 import {
     AstNode,
+    BooleanLiteral,
     ExpressionStatement,
     IntegerLiteral,
     Program,
     Statement,
 } from "./ast";
-import { IntegerObj, ValueObject } from "./object";
+import { BooleanObj, IntegerObj, NullObj, ValueObject } from "./object";
+
+const TRUE_OBJ = new BooleanObj(true);
+const FALSE_OBJ = new BooleanObj(false);
+const NULL_OBJ = new NullObj();
 
 export function evalNode(node: AstNode | null): ValueObject | null {
     if (node instanceof Program) {
@@ -14,6 +19,8 @@ export function evalNode(node: AstNode | null): ValueObject | null {
         return evalNode(node.expression);
     } else if (node instanceof IntegerLiteral) {
         return new IntegerObj(node.value);
+    } else if (node instanceof BooleanLiteral) {
+        return node.value ? TRUE_OBJ : FALSE_OBJ;
     }
 
     return null;
