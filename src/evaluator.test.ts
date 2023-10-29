@@ -29,6 +29,25 @@ test("test eval boolean expressions", () => {
     });
 });
 
+test("test bang operator", () => {
+    const tests: [string, boolean][] = [
+        ["!true", false],
+        ["!false", true],
+        ["!5", false],
+        ["!0", true],
+        ["!!true", true],
+        ["!!false", false],
+        ["!!5", true],
+        ["!!0", false],
+    ];
+
+    tests.forEach(([input, expected]) => {
+        const evaluated = testEval(input);
+
+        testBooleanObject(evaluated, expected);
+    });
+});
+
 function testEval(input: string): ValueObject | null {
     const lexer = new Lexer(input);
     const parser = new Parser(lexer);
