@@ -7,6 +7,8 @@ test("test eval integer expressions", () => {
     const tests: [string, number][] = [
         ["5", 5],
         ["10", 10],
+        ["-5", -5],
+        ["-10", -10],
     ];
 
     tests.forEach(([input, expected]) => {
