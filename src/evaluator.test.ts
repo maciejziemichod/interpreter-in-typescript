@@ -1,6 +1,6 @@
 import { Lexer } from "./lexer";
 import { Parser } from "./parser";
-import { IntegerObj, ValueObject } from "./object";
+import { BooleanObj, IntegerObj, ValueObject } from "./object";
 import { evalNode } from "./evaluator";
 
 test("test eval integer expressions", () => {
@@ -13,6 +13,19 @@ test("test eval integer expressions", () => {
         const evaluated = testEval(input);
 
         testIntegerObject(evaluated, expected);
+    });
+});
+
+test("test eval boolean expressions", () => {
+    const tests: [string, boolean][] = [
+        ["true", true],
+        ["false", false],
+    ];
+
+    tests.forEach(([input, expected]) => {
+        const evaluated = testEval(input);
+
+        testBooleanObject(evaluated, expected);
     });
 });
 
@@ -31,6 +44,21 @@ function testIntegerObject(object: ValueObject | null, expected: number): void {
     expect(isObjectInteger).toBe(true);
 
     if (!isObjectInteger) {
+        return;
+    }
+
+    expect(object.value).toBe(expected);
+}
+
+function testBooleanObject(
+    object: ValueObject | null,
+    expected: boolean,
+): void {
+    const isObjectBoolean = object instanceof BooleanObj;
+
+    expect(isObjectBoolean).toBe(true);
+
+    if (!isObjectBoolean) {
         return;
     }
 
