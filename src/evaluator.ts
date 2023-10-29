@@ -7,7 +7,13 @@ import {
     Program,
     Statement,
 } from "./ast";
-import { BooleanObj, IntegerObj, NullObj, ValueObject } from "./object";
+import {
+    BooleanObj,
+    IntegerObj,
+    NullObj,
+    ObjectType,
+    ValueObject,
+} from "./object";
 
 const TRUE_OBJ = new BooleanObj(true);
 const FALSE_OBJ = new BooleanObj(false);
@@ -48,6 +54,8 @@ function evalPrefixExpression(
     switch (operator) {
         case "!":
             return evalBangOperatorExpression(right);
+        case "-":
+            return evalMinusPrefixOperatorExpression(right);
         default:
             return NULL_OBJ;
     }
@@ -68,4 +76,16 @@ function evalBangOperatorExpression(right: ValueObject | null): ValueObject {
                 return FALSE_OBJ;
             }
     }
+}
+
+function evalMinusPrefixOperatorExpression(
+    right: ValueObject | null,
+): ValueObject {
+    if (right?.type() !== ObjectType.INTEGER_OBJ) {
+        return NULL_OBJ;
+    }
+
+    const value = (right as IntegerObj).value;
+
+    return new IntegerObj(-value);
 }
