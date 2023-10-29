@@ -3,6 +3,7 @@ import {
     BooleanLiteral,
     ExpressionStatement,
     IntegerLiteral,
+    PrefixExpression,
     Program,
     Statement,
 } from "./ast";
@@ -21,6 +22,10 @@ export function evalNode(node: AstNode | null): ValueObject | null {
         return new IntegerObj(node.value);
     } else if (node instanceof BooleanLiteral) {
         return node.value ? TRUE_OBJ : FALSE_OBJ;
+    } else if (node instanceof PrefixExpression) {
+        const right = evalNode(node.right);
+
+        return evalPrefixExpression(node.operator, right);
     }
 
     return null;
@@ -34,4 +39,33 @@ function evalStatements(statements: Statement[]): ValueObject | null {
     });
 
     return result;
+}
+
+function evalPrefixExpression(
+    operator: string,
+    right: ValueObject | null,
+): ValueObject {
+    switch (operator) {
+        case "!":
+            return evalBangOperatorExpression(right);
+        default:
+            return NULL_OBJ;
+    }
+}
+
+function evalBangOperatorExpression(right: ValueObject | null): ValueObject {
+    switch (right) {
+        case TRUE_OBJ:
+            return FALSE_OBJ;
+        case FALSE_OBJ:
+            return TRUE_OBJ;
+        case NULL_OBJ:
+            return TRUE_OBJ;
+        default:
+            if (right instanceof IntegerObj && right.value === 0) {
+                return TRUE_OBJ;
+            } else {
+                return FALSE_OBJ;
+            }
+    }
 }
