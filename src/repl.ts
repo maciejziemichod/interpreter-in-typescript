@@ -2,6 +2,7 @@ import readline from "readline";
 import { Lexer } from "./lexer";
 import { Parser } from "./parser";
 import { TokenType } from "./token";
+import { evalNode } from "./evaluator";
 
 export function startRepl(
     input: NodeJS.ReadableStream,
@@ -27,7 +28,11 @@ export function startRepl(
             return;
         }
 
-        console.log(program.string());
+        const evaluated = evalNode(program);
+
+        if (evaluated !== null) {
+            console.log(evaluated.inspect());
+        }
 
         rl.prompt();
     });
