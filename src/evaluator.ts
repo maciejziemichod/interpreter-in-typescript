@@ -1,7 +1,9 @@
 import {
     AstNode,
+    BlockStatement,
     BooleanLiteral,
     ExpressionStatement,
+    IfExpression,
     InfixExpression,
     IntegerLiteral,
     PrefixExpression,
@@ -25,6 +27,10 @@ export function evalNode(node: AstNode | null): ValueObject | null {
         return evalStatements(node.statements);
     } else if (node instanceof ExpressionStatement) {
         return evalNode(node.expression);
+    } else if (node instanceof BlockStatement) {
+        return evalStatements(node.statements);
+    } else if (node instanceof IfExpression) {
+        return evalIfExpression(node);
     } else if (node instanceof IntegerLiteral) {
         return new IntegerObj(node.value);
     } else if (node instanceof BooleanLiteral) {
@@ -68,20 +74,7 @@ function evalPrefixExpression(
 }
 
 function evalBangOperatorExpression(right: ValueObject | null): ValueObject {
-    switch (right) {
-        case TRUE_OBJ:
-            return FALSE_OBJ;
-        case FALSE_OBJ:
-            return TRUE_OBJ;
-        case NULL_OBJ:
-            return TRUE_OBJ;
-        default:
-            if (isIntegerObj(right) && right.value === 0) {
-                return TRUE_OBJ;
-            } else {
-                return FALSE_OBJ;
-            }
-    }
+    return isTruthy(right) ? FALSE_OBJ : TRUE_OBJ;
 }
 
 function evalMinusPrefixOperatorExpression(
@@ -136,6 +129,34 @@ function evalIntegerInfixExpression(
             return nativeBooleanToBooleanObject(left.value !== right.value);
         default:
             return NULL_OBJ;
+    }
+}
+
+function evalIfExpression(expression: IfExpression): ValueObject | null {
+    const condition = evalNode(expression.condition);
+
+    if (isTruthy(condition)) {
+        return evalNode(expression.consequence);
+    } else if (expression.alternative !== null) {
+        return evalNode(expression.alternative);
+    } else {
+        return NULL_OBJ;
+    }
+}
+
+function isTruthy(obj: ValueObject | null): boolean {
+    switch (obj) {
+        case TRUE_OBJ:
+            return true;
+        case FALSE_OBJ:
+        case NULL_OBJ:
+            return false;
+        default:
+            if (isIntegerObj(obj) && obj.value === 0) {
+                return false;
+            } else {
+                return true;
+            }
     }
 }
 
