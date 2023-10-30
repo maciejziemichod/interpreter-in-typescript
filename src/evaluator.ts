@@ -2,6 +2,7 @@ import {
     AstNode,
     BooleanLiteral,
     ExpressionStatement,
+    InfixExpression,
     IntegerLiteral,
     PrefixExpression,
     Program,
@@ -32,6 +33,11 @@ export function evalNode(node: AstNode | null): ValueObject | null {
         const right = evalNode(node.right);
 
         return evalPrefixExpression(node.operator, right);
+    } else if (node instanceof InfixExpression) {
+        const left = evalNode(node.left);
+        const right = evalNode(node.right);
+
+        return evalInfixExpression(node.operator, left, right);
     }
 
     return null;
@@ -70,7 +76,7 @@ function evalBangOperatorExpression(right: ValueObject | null): ValueObject {
         case NULL_OBJ:
             return TRUE_OBJ;
         default:
-            if (right instanceof IntegerObj && right.value === 0) {
+            if (isIntegerObj(right) && right.value === 0) {
                 return TRUE_OBJ;
             } else {
                 return FALSE_OBJ;
@@ -81,11 +87,46 @@ function evalBangOperatorExpression(right: ValueObject | null): ValueObject {
 function evalMinusPrefixOperatorExpression(
     right: ValueObject | null,
 ): ValueObject {
-    if (right?.type() !== ObjectType.INTEGER_OBJ) {
+    if (!isIntegerObj(right)) {
         return NULL_OBJ;
     }
 
-    const value = (right as IntegerObj).value;
+    const value = right.value;
 
     return new IntegerObj(-value);
+}
+
+function evalInfixExpression(
+    operator: string,
+    left: ValueObject | null,
+    right: ValueObject | null,
+): ValueObject {
+    if (isIntegerObj(left) && isIntegerObj(right)) {
+        return evalIntegerInfixExpression(operator, left, right);
+    } else {
+        return NULL_OBJ;
+    }
+}
+
+function evalIntegerInfixExpression(
+    operator: string,
+    left: IntegerObj,
+    right: IntegerObj,
+): ValueObject {
+    switch (operator) {
+        case "+":
+            return new IntegerObj(left.value + right.value);
+        case "-":
+            return new IntegerObj(left.value - right.value);
+        case "*":
+            return new IntegerObj(left.value * right.value);
+        case "/":
+            return new IntegerObj(left.value / right.value);
+        default:
+            return NULL_OBJ;
+    }
+}
+
+function isIntegerObj(obj: ValueObject | null): obj is IntegerObj {
+    return obj?.type() === ObjectType.INTEGER_OBJ;
 }
