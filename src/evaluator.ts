@@ -28,7 +28,7 @@ export function evalNode(node: AstNode | null): ValueObject | null {
     } else if (node instanceof IntegerLiteral) {
         return new IntegerObj(node.value);
     } else if (node instanceof BooleanLiteral) {
-        return node.value ? TRUE_OBJ : FALSE_OBJ;
+        return nativeBooleanToBooleanObject(node.value);
     } else if (node instanceof PrefixExpression) {
         const right = evalNode(node.right);
 
@@ -103,6 +103,10 @@ function evalInfixExpression(
 ): ValueObject {
     if (isIntegerObj(left) && isIntegerObj(right)) {
         return evalIntegerInfixExpression(operator, left, right);
+    } else if (operator === "==") {
+        return nativeBooleanToBooleanObject(left === right);
+    } else if (operator === "!=") {
+        return nativeBooleanToBooleanObject(left !== right);
     } else {
         return NULL_OBJ;
     }
@@ -122,9 +126,21 @@ function evalIntegerInfixExpression(
             return new IntegerObj(left.value * right.value);
         case "/":
             return new IntegerObj(left.value / right.value);
+        case ">":
+            return nativeBooleanToBooleanObject(left.value > right.value);
+        case "<":
+            return nativeBooleanToBooleanObject(left.value < right.value);
+        case "==":
+            return nativeBooleanToBooleanObject(left.value === right.value);
+        case "!=":
+            return nativeBooleanToBooleanObject(left.value !== right.value);
         default:
             return NULL_OBJ;
     }
+}
+
+function nativeBooleanToBooleanObject(value: boolean): BooleanObj {
+    return value ? TRUE_OBJ : FALSE_OBJ;
 }
 
 function isIntegerObj(obj: ValueObject | null): obj is IntegerObj {
