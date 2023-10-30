@@ -1,6 +1,6 @@
 import { Lexer } from "./lexer";
 import { Parser } from "./parser";
-import { BooleanObj, IntegerObj, ValueObject } from "./object";
+import { BooleanObj, IntegerObj, NullObj, ValueObject } from "./object";
 import { evalNode } from "./evaluator";
 
 test("test eval integer expressions", () => {
@@ -78,6 +78,28 @@ test("test bang operator", () => {
     });
 });
 
+test("test if else expressions", () => {
+    const tests: [string, number | null][] = [
+        ["if (true) { 10 }", 10],
+        ["if (false) { 10 }", null],
+        ["if (1) { 10 }", 10],
+        ["if (1 < 2) { 10 }", 10],
+        ["if (1 > 2) { 10 }", null],
+        ["if (1 > 2) { 10 } else { 20 }", 20],
+        ["if (1 < 2) { 10 } else { 20 }", 10],
+    ];
+
+    tests.forEach(([input, expected]) => {
+        const evaluated = testEval(input);
+
+        if (typeof expected === "number") {
+            testIntegerObject(evaluated, expected);
+        } else {
+            testNullObject(evaluated);
+        }
+    });
+});
+
 function testEval(input: string): ValueObject | null {
     const lexer = new Lexer(input);
     const parser = new Parser(lexer);
@@ -112,4 +134,8 @@ function testBooleanObject(
     }
 
     expect(object.value).toBe(expected);
+}
+
+function testNullObject(object: ValueObject | null) {
+    expect(object).toBeInstanceOf(NullObj);
 }
