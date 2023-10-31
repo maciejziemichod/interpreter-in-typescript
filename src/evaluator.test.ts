@@ -100,6 +100,33 @@ test("test if else expressions", () => {
     });
 });
 
+test("test return statements", () => {
+    const tests: [string, number][] = [
+        ["return 10;", 10],
+        ["return 10; 9;", 10],
+        ["return 2 * 5; 9;", 10],
+        ["9; return 2 * 5; 9;", 10],
+        [
+            `
+if (10 > 1) {
+  if (10 > 1) {
+    return 10;
+  }
+
+  return 1;
+}
+`,
+            10,
+        ],
+    ];
+
+    tests.forEach(([input, expected]) => {
+        const evaluated = testEval(input);
+
+        testIntegerObject(evaluated, expected);
+    });
+});
+
 function testEval(input: string): ValueObject | null {
     const lexer = new Lexer(input);
     const parser = new Parser(lexer);
