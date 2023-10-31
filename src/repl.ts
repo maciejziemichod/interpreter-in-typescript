@@ -2,6 +2,7 @@ import readline from "readline";
 import { Lexer } from "./lexer";
 import { Parser } from "./parser";
 import { evalNode } from "./evaluator";
+import { Environment } from "./environment";
 
 export function startRepl(
     input: NodeJS.ReadableStream,
@@ -12,6 +13,7 @@ export function startRepl(
         output,
         prompt: ">> ",
     });
+    const environment = new Environment();
 
     rl.prompt();
 
@@ -27,7 +29,7 @@ export function startRepl(
             return;
         }
 
-        const evaluated = evalNode(program);
+        const evaluated = evalNode(program, environment);
 
         if (evaluated !== null) {
             console.log(evaluated.inspect());
