@@ -1,9 +1,13 @@
+import { BlockStatement, Identifier } from "./ast";
+import { Environment } from "./environment";
+
 export const ObjectType = {
     INTEGER_OBJ: "INTEGER",
     BOOLEAN_OBJ: "BOOLEAN",
     NULL_OBJ: "NULL",
     RETURN_VALUE_OBJ: "RETURN_VALUE",
     ERROR_OBJ: "ERROR",
+    FUNCTION_OBJ: "FUNCTION",
 } as const;
 
 type ObjectTypeItem = (typeof ObjectType)[keyof typeof ObjectType];
@@ -84,5 +88,33 @@ export class ErrorObj implements ValueObject {
 
     public inspect(): string {
         return `ERROR: ${this.message}`;
+    }
+}
+
+export class FunctionObj implements ValueObject {
+    public parameters: Identifier[];
+    public body: BlockStatement | null;
+    public environment: Environment;
+
+    constructor(
+        parameters: Identifier[] | null,
+        body: BlockStatement | null,
+        environment: Environment,
+    ) {
+        this.parameters = parameters ?? [];
+        this.body = body;
+        this.environment = environment;
+    }
+
+    public type(): ObjectTypeItem {
+        return ObjectType.FUNCTION_OBJ;
+    }
+
+    public inspect(): string {
+        return `fn(${this.parameters
+            .map((parameter) => parameter.string())
+            .join(", ")}) {
+${this.body?.string()}
+}`;
     }
 }

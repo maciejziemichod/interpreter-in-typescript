@@ -2,7 +2,10 @@ import {
     AstNode,
     BlockStatement,
     BooleanLiteral,
+    CallExpression,
+    Expression,
     ExpressionStatement,
+    FunctionLiteral,
     Identifier,
     IfExpression,
     InfixExpression,
@@ -16,6 +19,7 @@ import { Environment } from "./environment";
 import {
     BooleanObj,
     ErrorObj,
+    FunctionObj,
     IntegerObj,
     NullObj,
     ReturnValue,
@@ -62,6 +66,22 @@ export function evalNode(
         return new IntegerObj(node.value);
     } else if (node instanceof BooleanLiteral) {
         return nativeBooleanToBooleanObject(node.value);
+    } else if (node instanceof FunctionLiteral) {
+        return new FunctionObj(node.parameters, node.body, environment);
+    } else if (node instanceof CallExpression) {
+        const fn = evalNode(node.expression, environment);
+
+        if (fn instanceof ErrorObj) {
+            return fn;
+        }
+
+        const args = evalExpressions(node.arguments ?? [], environment);
+
+        if (args.length === 1 && args[0] instanceof ErrorObj) {
+            return args[0];
+        }
+
+        return applyFunction(fn, args);
     } else if (node instanceof PrefixExpression) {
         const right = evalNode(node.right, environment);
 
@@ -238,6 +258,60 @@ function evalIdentifier(
     }
 
     return value;
+}
+
+function evalExpressions(
+    expressions: Expression[],
+    environment: Environment,
+): Array<ValueObject | null> {
+    const result: Array<ValueObject | null> = [];
+
+    for (const expression of expressions) {
+        const evaluated = evalNode(expression, environment);
+
+        if (evaluated instanceof ErrorObj) {
+            return [evaluated];
+        }
+
+        result.push(evaluated);
+    }
+
+    return result;
+}
+
+function applyFunction(
+    fn: ValueObject | null,
+    args: Array<ValueObject | null>,
+): ValueObject | null {
+    if (!(fn instanceof FunctionObj)) {
+        return new ErrorObj(`not a function: ${fn?.type()}`);
+    }
+
+    const extendedEnvironment = extendFunctionEnvironment(fn, args);
+    const evaluated = evalNode(fn.body, extendedEnvironment);
+
+    return unwrapReturnValue(evaluated);
+}
+
+function extendFunctionEnvironment(
+    fn: FunctionObj,
+    args: Array<ValueObject | null>,
+): Environment {
+    const environment = new Environment(fn.environment);
+
+    fn.parameters.forEach((parameter, parameterIndex) => {
+        environment.set(parameter.value, args[parameterIndex]);
+    });
+
+    return environment;
+}
+
+function unwrapReturnValue(obj: ValueObject | null): ValueObject | null {
+    if (obj instanceof ReturnValue) {
+        return obj.value;
+    }
+
+    return obj;
 }
 
 function isTruthy(obj: ValueObject | null): boolean {
