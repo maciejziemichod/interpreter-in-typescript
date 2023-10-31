@@ -9,13 +9,12 @@ import {
     PrefixExpression,
     Program,
     ReturnStatement,
-    Statement,
 } from "./ast";
 import {
     BooleanObj,
+    ErrorObj,
     IntegerObj,
     NullObj,
-    ObjectType,
     ReturnValue,
     ValueObject,
 } from "./object";
@@ -34,6 +33,10 @@ export function evalNode(node: AstNode | null): ValueObject | null {
     } else if (node instanceof ReturnStatement) {
         const value = evalNode(node.returnValue);
 
+        if (value instanceof ErrorObj) {
+            return value;
+        }
+
         return new ReturnValue(value);
     } else if (node instanceof IfExpression) {
         return evalIfExpression(node);
@@ -44,10 +47,23 @@ export function evalNode(node: AstNode | null): ValueObject | null {
     } else if (node instanceof PrefixExpression) {
         const right = evalNode(node.right);
 
+        if (right instanceof ErrorObj) {
+            return right;
+        }
+
         return evalPrefixExpression(node.operator, right);
     } else if (node instanceof InfixExpression) {
         const left = evalNode(node.left);
+
+        if (left instanceof ErrorObj) {
+            return left;
+        }
+
         const right = evalNode(node.right);
+
+        if (right instanceof ErrorObj) {
+            return right;
+        }
 
         return evalInfixExpression(node.operator, left, right);
     }
@@ -63,6 +79,8 @@ function evalProgram(program: Program): ValueObject | null {
 
         if (result instanceof ReturnValue) {
             return result.value;
+        } else if (result instanceof ErrorObj) {
+            return result;
         }
     }
 
@@ -79,7 +97,9 @@ function evalPrefixExpression(
         case "-":
             return evalMinusPrefixOperatorExpression(right);
         default:
-            return NULL_OBJ;
+            return new ErrorObj(
+                `unknown operator: ${operator}${right?.type()}`,
+            );
     }
 }
 
@@ -90,8 +110,8 @@ function evalBangOperatorExpression(right: ValueObject | null): ValueObject {
 function evalMinusPrefixOperatorExpression(
     right: ValueObject | null,
 ): ValueObject {
-    if (!isIntegerObj(right)) {
-        return NULL_OBJ;
+    if (!(right instanceof IntegerObj)) {
+        return new ErrorObj(`unknown operator: -${right?.type()}`);
     }
 
     const value = right.value;
@@ -104,14 +124,20 @@ function evalInfixExpression(
     left: ValueObject | null,
     right: ValueObject | null,
 ): ValueObject {
-    if (isIntegerObj(left) && isIntegerObj(right)) {
+    if (left instanceof IntegerObj && right instanceof IntegerObj) {
         return evalIntegerInfixExpression(operator, left, right);
     } else if (operator === "==") {
         return nativeBooleanToBooleanObject(left === right);
     } else if (operator === "!=") {
         return nativeBooleanToBooleanObject(left !== right);
+    } else if (left?.type() !== right?.type()) {
+        return new ErrorObj(
+            `type mismatch: ${left?.type()} ${operator} ${right?.type()}`,
+        );
     } else {
-        return NULL_OBJ;
+        return new ErrorObj(
+            `unknown operator: ${left?.type()} ${operator} ${right?.type()}`,
+        );
     }
 }
 
@@ -138,12 +164,18 @@ function evalIntegerInfixExpression(
         case "!=":
             return nativeBooleanToBooleanObject(left.value !== right.value);
         default:
-            return NULL_OBJ;
+            return new ErrorObj(
+                `unknown operator: ${left.type()} ${operator} ${right.type()}`,
+            );
     }
 }
 
 function evalIfExpression(expression: IfExpression): ValueObject | null {
     const condition = evalNode(expression.condition);
+
+    if (condition instanceof ErrorObj) {
+        return condition;
+    }
 
     if (isTruthy(condition)) {
         return evalNode(expression.consequence);
@@ -160,7 +192,7 @@ function evalBlockStatement(block: BlockStatement): ValueObject | null {
     for (const statement of block.statements) {
         result = evalNode(statement);
 
-        if (result instanceof ReturnValue) {
+        if (result instanceof ReturnValue || result instanceof ErrorObj) {
             return result;
         }
     }
@@ -176,7 +208,7 @@ function isTruthy(obj: ValueObject | null): boolean {
         case NULL_OBJ:
             return false;
         default:
-            if (isIntegerObj(obj) && obj.value === 0) {
+            if (obj instanceof IntegerObj && obj.value === 0) {
                 return false;
             } else {
                 return true;
@@ -186,8 +218,4 @@ function isTruthy(obj: ValueObject | null): boolean {
 
 function nativeBooleanToBooleanObject(value: boolean): BooleanObj {
     return value ? TRUE_OBJ : FALSE_OBJ;
-}
-
-function isIntegerObj(obj: ValueObject | null): obj is IntegerObj {
-    return obj?.type() === ObjectType.INTEGER_OBJ;
 }
