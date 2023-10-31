@@ -8,6 +8,7 @@ import {
     ValueObject,
 } from "./object";
 import { evalNode } from "./evaluator";
+import { Environment } from "./environment";
 
 test("test eval integer expressions", () => {
     const tests: [string, number][] = [
@@ -156,6 +157,7 @@ if (10 > 1) {
 `,
             "unknown operator: BOOLEAN + BOOLEAN",
         ],
+        ["foobar", "identifier not found: foobar"],
     ];
 
     tests.forEach(([input, expectedMessage]) => {
@@ -166,13 +168,29 @@ if (10 > 1) {
     });
 });
 
+test("test let statements", () => {
+    const tests: [string, number][] = [
+        ["let a = 5; a;", 5],
+        ["let a = 5 * 5; a;", 25],
+        ["let a = 5; let b = a; b;", 5],
+        ["let a = 5; let b = a; let c = a + b + 5; c;", 15],
+    ];
+
+    tests.forEach(([input, expected]) => {
+        const evaluated = testEval(input);
+
+        testIntegerObject(evaluated, expected);
+    });
+});
+
 function testEval(input: string): ValueObject | null {
     const lexer = new Lexer(input);
     const parser = new Parser(lexer);
 
     const program = parser.parseProgram();
+    const environment = new Environment();
 
-    return evalNode(program);
+    return evalNode(program, environment);
 }
 
 function testIntegerObject(object: ValueObject | null, expected: number): void {
