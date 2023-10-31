@@ -2,6 +2,7 @@ export const ObjectType = {
     INTEGER_OBJ: "INTEGER",
     BOOLEAN_OBJ: "BOOLEAN",
     NULL_OBJ: "NULL",
+    RETURN_VALUE_OBJ: "RETURN_VALUE",
 } as const;
 
 type ObjectTypeItem = (typeof ObjectType)[keyof typeof ObjectType];
@@ -50,5 +51,21 @@ export class NullObj implements ValueObject {
 
     public inspect(): string {
         return "null";
+    }
+}
+
+export class ReturnValue implements ValueObject {
+    public value: ValueObject | null;
+
+    constructor(value: ValueObject | null) {
+        this.value = value;
+    }
+
+    public type(): ObjectTypeItem {
+        return ObjectType.RETURN_VALUE_OBJ;
+    }
+
+    public inspect(): string {
+        return this.value === null ? "null" : this.value.inspect();
     }
 }

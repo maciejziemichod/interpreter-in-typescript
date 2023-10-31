@@ -8,6 +8,7 @@ import {
     IntegerLiteral,
     PrefixExpression,
     Program,
+    ReturnStatement,
     Statement,
 } from "./ast";
 import {
@@ -15,6 +16,7 @@ import {
     IntegerObj,
     NullObj,
     ObjectType,
+    ReturnValue,
     ValueObject,
 } from "./object";
 
@@ -24,11 +26,15 @@ const NULL_OBJ = new NullObj();
 
 export function evalNode(node: AstNode | null): ValueObject | null {
     if (node instanceof Program) {
-        return evalStatements(node.statements);
+        return evalProgram(node);
     } else if (node instanceof ExpressionStatement) {
         return evalNode(node.expression);
     } else if (node instanceof BlockStatement) {
-        return evalStatements(node.statements);
+        return evalBlockStatement(node);
+    } else if (node instanceof ReturnStatement) {
+        const value = evalNode(node.returnValue);
+
+        return new ReturnValue(value);
     } else if (node instanceof IfExpression) {
         return evalIfExpression(node);
     } else if (node instanceof IntegerLiteral) {
@@ -49,12 +55,16 @@ export function evalNode(node: AstNode | null): ValueObject | null {
     return null;
 }
 
-function evalStatements(statements: Statement[]): ValueObject | null {
+function evalProgram(program: Program): ValueObject | null {
     let result: ValueObject | null = null;
 
-    statements.forEach((statement) => {
+    for (const statement of program.statements) {
         result = evalNode(statement);
-    });
+
+        if (result instanceof ReturnValue) {
+            return result.value;
+        }
+    }
 
     return result;
 }
@@ -142,6 +152,20 @@ function evalIfExpression(expression: IfExpression): ValueObject | null {
     } else {
         return NULL_OBJ;
     }
+}
+
+function evalBlockStatement(block: BlockStatement): ValueObject | null {
+    let result: ValueObject | null = null;
+
+    for (const statement of block.statements) {
+        result = evalNode(statement);
+
+        if (result?.type() === ObjectType.RETURN_VALUE_OBJ) {
+            return result;
+        }
+    }
+
+    return result;
 }
 
 function isTruthy(obj: ValueObject | null): boolean {
