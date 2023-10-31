@@ -1,6 +1,12 @@
 import { Lexer } from "./lexer";
 import { Parser } from "./parser";
-import { BooleanObj, IntegerObj, NullObj, ValueObject } from "./object";
+import {
+    BooleanObj,
+    ErrorObj,
+    IntegerObj,
+    NullObj,
+    ValueObject,
+} from "./object";
 import { evalNode } from "./evaluator";
 
 test("test eval integer expressions", () => {
@@ -124,6 +130,39 @@ if (10 > 1) {
         const evaluated = testEval(input);
 
         testIntegerObject(evaluated, expected);
+    });
+});
+
+test("test error handling", () => {
+    const tests: [string, string][] = [
+        ["5 + true;", "type mismatch: INTEGER + BOOLEAN"],
+        ["5 + true; 5;", "type mismatch: INTEGER + BOOLEAN"],
+        ["-true", "unknown operator: -BOOLEAN"],
+        ["true + false", "unknown operator: BOOLEAN + BOOLEAN"],
+        ["5; true + false; 5", "unknown operator: BOOLEAN + BOOLEAN"],
+        [
+            "if (10 > 1) { true + false; }",
+            "unknown operator: BOOLEAN + BOOLEAN",
+        ],
+        [
+            `
+if (10 > 1) {
+  if (10 > 1) {
+    return true + false;
+  }
+
+  return 1;
+}
+`,
+            "unknown operator: BOOLEAN + BOOLEAN",
+        ],
+    ];
+
+    tests.forEach(([input, expectedMessage]) => {
+        const evaluated = testEval(input);
+
+        expect(evaluated).toBeInstanceOf(ErrorObj);
+        expect((evaluated as ErrorObj)?.message).toBe(expectedMessage);
     });
 });
 
