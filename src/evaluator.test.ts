@@ -3,6 +3,7 @@ import { Parser } from "./parser";
 import {
     BooleanObj,
     ErrorObj,
+    FunctionObj,
     IntegerObj,
     NullObj,
     ValueObject,
@@ -125,6 +126,27 @@ if (10 > 1) {
 `,
             10,
         ],
+        [
+            `
+let f = fn(x) {
+  return x;
+  x + 10;
+};
+
+f(10);`,
+            10,
+        ],
+        [
+            `
+let f = fn(x) {
+   let result = x + 10;
+   return result;
+   return 10;
+};
+
+f(10);`,
+            20,
+        ],
     ];
 
     tests.forEach(([input, expected]) => {
@@ -181,6 +203,54 @@ test("test let statements", () => {
 
         testIntegerObject(evaluated, expected);
     });
+});
+
+test("test function object", () => {
+    const input = "fn(x) { x + 2; };";
+
+    const evaluated = testEval(input);
+
+    expect(evaluated).toBeInstanceOf(FunctionObj);
+
+    if (evaluated instanceof FunctionObj) {
+        expect(evaluated.parameters.length).toBe(1);
+        expect(evaluated.parameters[0].string()).toBe("x");
+        expect(evaluated.body?.string()).toBe("(x + 2)");
+    }
+});
+
+test("test function application", () => {
+    const tests: [string, number][] = [
+        ["let identity = fn(x) { x; }; identity(5);", 5],
+        ["let identity = fn(x) { return x; }; identity(5);", 5],
+        ["let double = fn(x) { x * 2; }; double(5);", 10],
+        ["let add = fn(x, y) { x + y; }; add(5, 5);", 10],
+        ["let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20],
+        ["fn(x) { x; }(5)", 5],
+        ["fn() { 10; }()", 10],
+    ];
+
+    tests.forEach(([input, expected]) => {
+        const evaluated = testEval(input);
+
+        testIntegerObject(evaluated, expected);
+    });
+});
+
+test("test closures", () => {
+    const input = `
+let newAdder = fn(x) {
+  fn(y) { x + y };
+};
+
+let addTwo = newAdder(2);
+
+addTwo(2);
+`;
+
+    const evaluated = testEval(input);
+
+    testIntegerObject(evaluated, 4);
 });
 
 function testEval(input: string): ValueObject | null {
