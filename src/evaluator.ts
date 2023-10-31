@@ -160,7 +160,7 @@ function evalBlockStatement(block: BlockStatement): ValueObject | null {
     for (const statement of block.statements) {
         result = evalNode(statement);
 
-        if (result?.type() === ObjectType.RETURN_VALUE_OBJ) {
+        if (result instanceof ReturnValue) {
             return result;
         }
     }
