@@ -116,6 +116,11 @@ export class Lexer {
             case "}":
                 token = newToken(TokenType.RIGHT_BRACE, this.char);
                 break;
+            case '"':
+                const literal = this.readString();
+
+                token = newToken(TokenType.STRING, literal);
+                break;
             case "\0":
                 token = newToken(TokenType.EOF, "");
                 break;
@@ -155,6 +160,16 @@ export class Lexer {
         while (isDigit(this.char)) {
             this.readChar();
         }
+
+        return this.input.slice(position, this.position);
+    }
+
+    private readString(): string {
+        const position = this.position + 1;
+
+        do {
+            this.readChar();
+        } while (this.char !== '"' && this.char !== "\0");
 
         return this.input.slice(position, this.position);
     }

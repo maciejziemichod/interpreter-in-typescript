@@ -128,6 +128,26 @@ export class IntegerLiteral implements Expression {
     }
 }
 
+export class StringLiteral implements Expression {
+    public token: Token;
+    public value: string;
+
+    constructor(token: Token, value: string) {
+        this.token = token;
+        this.value = value;
+    }
+
+    public expressionNode(): void {}
+
+    public getTokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    public string(): string {
+        return this.token.literal;
+    }
+}
+
 export class PrefixExpression implements Expression {
     public token: Token;
     public operator: string;

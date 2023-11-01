@@ -14,6 +14,7 @@ import {
     Program,
     ReturnStatement,
     Statement,
+    StringLiteral,
 } from "./ast";
 import { Lexer } from "./lexer";
 import { Token, TokenItem, TokenType } from "./token";
@@ -61,6 +62,7 @@ export class Parser {
 
         this.parseIdentifier = this.parseIdentifier.bind(this);
         this.parseIntegerLiteral = this.parseIntegerLiteral.bind(this);
+        this.parseStringLiteral = this.parseStringLiteral.bind(this);
         this.parsePrefixExpression = this.parsePrefixExpression.bind(this);
         this.parseInfixExpression = this.parseInfixExpression.bind(this);
         this.parseBooleanLiteral = this.parseBooleanLiteral.bind(this);
@@ -71,6 +73,7 @@ export class Parser {
 
         this.registerPrefix(TokenType.IDENTIFIER, this.parseIdentifier);
         this.registerPrefix(TokenType.INT, this.parseIntegerLiteral);
+        this.registerPrefix(TokenType.STRING, this.parseStringLiteral);
         this.registerPrefix(TokenType.BANG, this.parsePrefixExpression);
         this.registerPrefix(TokenType.MINUS, this.parsePrefixExpression);
         this.registerPrefix(TokenType.TRUE, this.parseBooleanLiteral);
@@ -279,6 +282,10 @@ export class Parser {
         integerLiteral.value = value;
 
         return integerLiteral;
+    }
+
+    private parseStringLiteral(): Expression {
+        return new StringLiteral(this.currentToken, this.currentToken.literal);
     }
 
     private parsePrefixExpression(): Expression | null {

@@ -3,11 +3,13 @@ import { Environment } from "./environment";
 
 export const ObjectType = {
     INTEGER_OBJ: "INTEGER",
+    STRING_OBJ: "STRING",
     BOOLEAN_OBJ: "BOOLEAN",
     NULL_OBJ: "NULL",
     RETURN_VALUE_OBJ: "RETURN_VALUE",
     ERROR_OBJ: "ERROR",
     FUNCTION_OBJ: "FUNCTION",
+    BUILTIN_OBJ: "BUILTIN",
 } as const;
 
 type ObjectTypeItem = (typeof ObjectType)[keyof typeof ObjectType];
@@ -30,6 +32,22 @@ export class IntegerObj implements ValueObject {
 
     public inspect(): string {
         return this.value.toString();
+    }
+}
+
+export class StringObj implements ValueObject {
+    public value: string;
+
+    constructor(value: string) {
+        this.value = value;
+    }
+
+    public type(): ObjectTypeItem {
+        return ObjectType.STRING_OBJ;
+    }
+
+    public inspect(): string {
+        return this.value;
     }
 }
 
@@ -116,5 +134,23 @@ export class FunctionObj implements ValueObject {
             .join(", ")}) {
 ${this.body?.string()}
 }`;
+    }
+}
+
+type BuiltinFunction = (...args: Array<ValueObject | null>) => ValueObject;
+
+export class Builtin implements ValueObject {
+    public fn: BuiltinFunction;
+
+    constructor(fn: BuiltinFunction) {
+        this.fn = fn;
+    }
+
+    public type(): ObjectTypeItem {
+        return ObjectType.BUILTIN_OBJ;
+    }
+
+    public inspect(): string {
+        return "builtin function";
     }
 }

@@ -14,21 +14,25 @@ import {
     PrefixExpression,
     Program,
     ReturnStatement,
+    StringLiteral,
 } from "./ast";
+import { builtins } from "./builtins";
 import { Environment } from "./environment";
 import {
     BooleanObj,
+    Builtin,
     ErrorObj,
     FunctionObj,
     IntegerObj,
     NullObj,
     ReturnValue,
+    StringObj,
     ValueObject,
 } from "./object";
 
 const TRUE_OBJ = new BooleanObj(true);
 const FALSE_OBJ = new BooleanObj(false);
-const NULL_OBJ = new NullObj();
+export const NULL_OBJ = new NullObj();
 
 export function evalNode(
     node: AstNode | null,
@@ -64,6 +68,8 @@ export function evalNode(
         return evalIfExpression(node, environment);
     } else if (node instanceof IntegerLiteral) {
         return new IntegerObj(node.value);
+    } else if (node instanceof StringLiteral) {
+        return new StringObj(node.value);
     } else if (node instanceof BooleanLiteral) {
         return nativeBooleanToBooleanObject(node.value);
     } else if (node instanceof FunctionLiteral) {
@@ -167,6 +173,8 @@ function evalInfixExpression(
 ): ValueObject {
     if (left instanceof IntegerObj && right instanceof IntegerObj) {
         return evalIntegerInfixExpression(operator, left, right);
+    } else if (left instanceof StringObj || right instanceof StringObj) {
+        return evalStringInfixExpression(operator, left, right);
     } else if (operator === "==") {
         return nativeBooleanToBooleanObject(left === right);
     } else if (operator === "!=") {
@@ -208,6 +216,33 @@ function evalIntegerInfixExpression(
             return new ErrorObj(
                 `unknown operator: ${left.type()} ${operator} ${right.type()}`,
             );
+    }
+}
+
+function evalStringInfixExpression(
+    operator: string,
+    left: ValueObject | null,
+    right: ValueObject | null,
+): ValueObject {
+    const isLeftString = left instanceof StringObj;
+    const isRightString = right instanceof StringObj;
+
+    if (operator === "+" && isLeftString && isRightString) {
+        return new StringObj(left.value + right.value);
+    } else if (operator === "==" && isLeftString && isRightString) {
+        return nativeBooleanToBooleanObject(left.value === right.value);
+    } else if (operator === "!=" && isLeftString && isRightString) {
+        return nativeBooleanToBooleanObject(left.value !== right.value);
+    } else if (
+        operator === "*" &&
+        isLeftString &&
+        right instanceof IntegerObj
+    ) {
+        return new StringObj(left.value.repeat(right.value));
+    } else {
+        return new ErrorObj(
+            `unknown operator: ${left?.type()} ${operator} ${right?.type()}`,
+        );
     }
 }
 
@@ -253,11 +288,15 @@ function evalIdentifier(
 ): ValueObject | null {
     const value = environment.get(node.value);
 
-    if (value === undefined) {
-        return new ErrorObj(`identifier not found: ${node.value}`);
+    if (value !== undefined) {
+        return value;
     }
 
-    return value;
+    if (node.value in builtins) {
+        return builtins[node.value as keyof typeof builtins];
+    }
+
+    return new ErrorObj(`identifier not found: ${node.value}`);
 }
 
 function evalExpressions(
@@ -283,14 +322,16 @@ function applyFunction(
     fn: ValueObject | null,
     args: Array<ValueObject | null>,
 ): ValueObject | null {
-    if (!(fn instanceof FunctionObj)) {
+    if (fn instanceof FunctionObj) {
+        const extendedEnvironment = extendFunctionEnvironment(fn, args);
+        const evaluated = evalNode(fn.body, extendedEnvironment);
+
+        return unwrapReturnValue(evaluated);
+    } else if (fn instanceof Builtin) {
+        return fn.fn(...args);
+    } else {
         return new ErrorObj(`not a function: ${fn?.type()}`);
     }
-
-    const extendedEnvironment = extendFunctionEnvironment(fn, args);
-    const evaluated = evalNode(fn.body, extendedEnvironment);
-
-    return unwrapReturnValue(evaluated);
 }
 
 function extendFunctionEnvironment(
@@ -322,7 +363,10 @@ function isTruthy(obj: ValueObject | null): boolean {
         case NULL_OBJ:
             return false;
         default:
-            if (obj instanceof IntegerObj && obj.value === 0) {
+            if (
+                (obj instanceof IntegerObj && obj.value === 0) ||
+                (obj instanceof StringObj && obj.value === "")
+            ) {
                 return false;
             } else {
                 return true;
