@@ -12,6 +12,7 @@ import {
     IfExpression,
     FunctionLiteral,
     CallExpression,
+    StringLiteral,
 } from "./ast";
 import { Lexer } from "./lexer";
 import { Parser } from "./parser";
@@ -138,6 +139,40 @@ test("test integer literal expressions", () => {
 
     expect(integerLiteral.value).toBe(5);
     expect(integerLiteral.getTokenLiteral()).toBe("5");
+});
+
+test("test string literal expressions", () => {
+    const input = `"hello world";`;
+
+    const lexer = new Lexer(input);
+    const parser = new Parser(lexer);
+
+    const program = parser.parseProgram();
+
+    checkParserErrors(parser);
+
+    expect(program.statements.length).toBe(1);
+
+    const expression = program.statements[0];
+    const isStatementExpression = expression instanceof ExpressionStatement;
+
+    expect(isStatementExpression).toBe(true);
+
+    if (!isStatementExpression) {
+        return;
+    }
+
+    const stringLiteral = expression.expression;
+    const isExpressionStringLiteral = stringLiteral instanceof StringLiteral;
+
+    expect(isExpressionStringLiteral).toBe(true);
+
+    if (!isExpressionStringLiteral) {
+        return;
+    }
+
+    expect(stringLiteral.value).toBe("hello world");
+    expect(stringLiteral.getTokenLiteral()).toBe("hello world");
 });
 
 test("test parsing prefix expressions", () => {

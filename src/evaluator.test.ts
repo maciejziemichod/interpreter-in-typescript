@@ -6,6 +6,7 @@ import {
     FunctionObj,
     IntegerObj,
     NullObj,
+    StringObj,
     ValueObject,
 } from "./object";
 import { evalNode } from "./evaluator";
@@ -37,6 +38,32 @@ test("test eval integer expressions", () => {
     });
 });
 
+test("test eval string literal", () => {
+    const input = `"Hello World!"`;
+
+    const evaluated = testEval(input);
+
+    testStringObject(evaluated, "Hello World!");
+});
+
+test("test eval string expressions", () => {
+    const tests = [
+        [`"Hello" + " " + "World!"`, "Hello World!"],
+        [`"" + ""`, ""],
+        [`" " + ""`, " "],
+        [`" " + " "`, "  "],
+        [`"How do you do? " * 2`, "How do you do? How do you do? "],
+        [`"" * 7`, ""],
+        [`" " * 3`, "   "],
+    ];
+
+    tests.forEach(([input, expected]) => {
+        const evaluated = testEval(input);
+
+        testStringObject(evaluated, expected);
+    });
+});
+
 test("test eval boolean expressions", () => {
     const tests: [string, boolean][] = [
         ["true", true],
@@ -49,6 +76,11 @@ test("test eval boolean expressions", () => {
         ["1 != 1", false],
         ["1 == 2", false],
         ["1 != 2", true],
+        [`"hello" == "world"`, false],
+        [`"hello" != "world"`, true],
+        [`"hello" == "hello"`, true],
+        [`"hello" != "hello"`, false],
+        [`"" == ""`, true],
         ["true == true", true],
         ["false == false", true],
         ["true == false", false],
@@ -73,10 +105,14 @@ test("test bang operator", () => {
         ["!false", true],
         ["!5", false],
         ["!0", true],
+        [`!"hello"`, false],
+        [`!""`, true],
         ["!!true", true],
         ["!!false", false],
         ["!!5", true],
         ["!!0", false],
+        [`!!"hello"`, true],
+        [`!!""`, false],
     ];
 
     tests.forEach(([input, expected]) => {
@@ -160,7 +196,9 @@ test("test error handling", () => {
     const tests: [string, string][] = [
         ["5 + true;", "type mismatch: INTEGER + BOOLEAN"],
         ["5 + true; 5;", "type mismatch: INTEGER + BOOLEAN"],
+        [`5 + "hello";`, "unknown operator: INTEGER + STRING"],
         ["-true", "unknown operator: -BOOLEAN"],
+        [`-"hello"`, "unknown operator: -STRING"],
         ["true + false", "unknown operator: BOOLEAN + BOOLEAN"],
         ["5; true + false; 5", "unknown operator: BOOLEAN + BOOLEAN"],
         [
@@ -180,6 +218,8 @@ if (10 > 1) {
             "unknown operator: BOOLEAN + BOOLEAN",
         ],
         ["foobar", "identifier not found: foobar"],
+        [`"Hello" - "World"`, "unknown operator: STRING - STRING"],
+        [`"Hello" / "World"`, "unknown operator: STRING / STRING"],
     ];
 
     tests.forEach(([input, expectedMessage]) => {
@@ -253,6 +293,30 @@ addTwo(2);
     testIntegerObject(evaluated, 4);
 });
 
+test("test builtin functions", () => {
+    const tests: [string, number | string][] = [
+        [`len("")`, 0],
+        [`len("four")`, 4],
+        [`len("hello world")`, 11],
+        [`len(1)`, "argument to `len` not supported, got INTEGER"],
+        [`len("one", "two")`, "wrong number of arguments. got=2, want=1"],
+    ];
+
+    tests.forEach(([input, expected]) => {
+        const evaluated = testEval(input);
+
+        switch (typeof expected) {
+            case "number":
+                testIntegerObject(evaluated, expected);
+                break;
+            case "string":
+                expect(evaluated).toBeInstanceOf(ErrorObj);
+                expect((evaluated as ErrorObj).message).toBe(expected);
+                break;
+        }
+    });
+});
+
 function testEval(input: string): ValueObject | null {
     const lexer = new Lexer(input);
     const parser = new Parser(lexer);
@@ -269,6 +333,18 @@ function testIntegerObject(object: ValueObject | null, expected: number): void {
     expect(isObjectInteger).toBe(true);
 
     if (!isObjectInteger) {
+        return;
+    }
+
+    expect(object.value).toBe(expected);
+}
+
+function testStringObject(object: ValueObject | null, expected: string): void {
+    const isObjectString = object instanceof StringObj;
+
+    expect(isObjectString).toBe(true);
+
+    if (!isObjectString) {
         return;
     }
 
