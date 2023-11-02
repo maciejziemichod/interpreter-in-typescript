@@ -13,6 +13,8 @@ import {
     FunctionLiteral,
     CallExpression,
     StringLiteral,
+    ArrayLiteral,
+    IndexExpression,
 } from "./ast";
 import { Lexer } from "./lexer";
 import { Parser } from "./parser";
@@ -173,6 +175,75 @@ test("test string literal expressions", () => {
 
     expect(stringLiteral.value).toBe("hello world");
     expect(stringLiteral.getTokenLiteral()).toBe("hello world");
+});
+
+test("test parsing array literals", () => {
+    const input = "[1, 2 * 3, 4 + 5]";
+
+    const lexer = new Lexer(input);
+    const parser = new Parser(lexer);
+
+    const program = parser.parseProgram();
+
+    checkParserErrors(parser);
+    expect(program.statements.length).toBe(1);
+
+    const expression = program.statements[0];
+    const isStatementExpression = expression instanceof ExpressionStatement;
+
+    expect(isStatementExpression).toBe(true);
+
+    if (!isStatementExpression) {
+        return;
+    }
+
+    const arrayLiteral = expression.expression;
+    const isExpressionArrayLiteral = arrayLiteral instanceof ArrayLiteral;
+
+    expect(isExpressionArrayLiteral).toBe(true);
+
+    if (!isExpressionArrayLiteral) {
+        return;
+    }
+
+    expect(arrayLiteral.elements.length).toBe(3);
+    testIntegerLiteral(arrayLiteral.elements[0], 1);
+    testInfixExpression(arrayLiteral.elements[1], 2, "*", 3);
+    testInfixExpression(arrayLiteral.elements[2], 4, "+", 5);
+});
+
+test("test parsing index expressions", () => {
+    const input = "myArray[1 + 1]";
+
+    const lexer = new Lexer(input);
+    const parser = new Parser(lexer);
+
+    const program = parser.parseProgram();
+
+    checkParserErrors(parser);
+    expect(program.statements.length).toBe(1);
+
+    const expression = program.statements[0];
+    const isStatementExpression = expression instanceof ExpressionStatement;
+
+    expect(isStatementExpression).toBe(true);
+
+    if (!isStatementExpression) {
+        return;
+    }
+
+    const indexExpression = expression.expression;
+    const isExpressionIndexExpression =
+        indexExpression instanceof IndexExpression;
+
+    expect(isExpressionIndexExpression).toBe(true);
+
+    if (!isExpressionIndexExpression) {
+        return;
+    }
+
+    testIdentifier(indexExpression.left, "myArray");
+    testInfixExpression(indexExpression.index, 1, "+", 1);
 });
 
 test("test parsing prefix expressions", () => {

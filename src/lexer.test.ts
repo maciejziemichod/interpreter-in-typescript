@@ -23,6 +23,7 @@ if (5 < 10) {
 5 != 6;
 "foobar"
 "foo bar"
+[1, 2];
 `;
 
     const tests: [TokenItem, string][] = [
@@ -101,6 +102,12 @@ if (5 < 10) {
         [TokenType.SEMICOLON, ";"],
         [TokenType.STRING, "foobar"],
         [TokenType.STRING, "foo bar"],
+        [TokenType.LEFT_BRACKET, "["],
+        [TokenType.INT, "1"],
+        [TokenType.COMMA, ","],
+        [TokenType.INT, "2"],
+        [TokenType.RIGHT_BRACKET, "]"],
+        [TokenType.SEMICOLON, ";"],
         [TokenType.EOF, ""],
     ];
 

@@ -1,6 +1,7 @@
 import { Lexer } from "./lexer";
 import { Parser } from "./parser";
 import {
+    ArrayObj,
     BooleanObj,
     ErrorObj,
     FunctionObj,
@@ -220,6 +221,7 @@ if (10 > 1) {
         ["foobar", "identifier not found: foobar"],
         [`"Hello" - "World"`, "unknown operator: STRING - STRING"],
         [`"Hello" / "World"`, "unknown operator: STRING / STRING"],
+        ["999[1]", "index operator not supported: INTEGER"],
     ];
 
     tests.forEach(([input, expectedMessage]) => {
@@ -294,12 +296,26 @@ addTwo(2);
 });
 
 test("test builtin functions", () => {
-    const tests: [string, number | string][] = [
+    const tests: [string, any][] = [
         [`len("")`, 0],
         [`len("four")`, 4],
         [`len("hello world")`, 11],
         [`len(1)`, "argument to `len` not supported, got INTEGER"],
         [`len("one", "two")`, "wrong number of arguments. got=2, want=1"],
+        [`len([])`, 0],
+        [`len([1, 2])`, 2],
+        [`first([1, 2, 3])`, 1],
+        [`first([])`, null],
+        [`first(1)`, "argument to `first` must be ARRAY, got INTEGER"],
+        [`last([1, 2, 3])`, 3],
+        [`last([])`, null],
+        [`last(1)`, "argument to `last` must be ARRAY, got INTEGER"],
+        [`rest([1, 2, 3])`, [2, 3]],
+        [`rest([1])`, []],
+        [`rest([])`, null],
+        [`rest(1)`, "argument to `rest` must be ARRAY, got INTEGER"],
+        [`push([], 1)`, [1]],
+        [`push(1, 1)`, "first argument to `push` must be ARRAY, got INTEGER"],
     ];
 
     tests.forEach(([input, expected]) => {
@@ -313,6 +329,63 @@ test("test builtin functions", () => {
                 expect(evaluated).toBeInstanceOf(ErrorObj);
                 expect((evaluated as ErrorObj).message).toBe(expected);
                 break;
+
+            default:
+                if (Array.isArray(expected)) {
+                    expect(evaluated).toBeInstanceOf(ArrayObj);
+
+                    const array = evaluated as ArrayObj;
+
+                    expect(array).toBeInstanceOf(ArrayObj);
+                    expect(array.elements).toHaveLength(expected.length);
+
+                    expected.forEach((element, index) => {
+                        testIntegerObject(array.elements[index], element);
+                    });
+                } else {
+                    testNullObject(evaluated);
+                }
+                break;
+        }
+    });
+});
+
+test("test array literal", () => {
+    const input = "[1, 2 * 2, 3 + 3]";
+
+    const evaluated = testEval(input);
+
+    expect(evaluated).toBeInstanceOf(ArrayObj);
+
+    const result = evaluated as ArrayObj;
+
+    expect(result.elements).toHaveLength(3);
+    testIntegerObject(result.elements[0], 1);
+    testIntegerObject(result.elements[1], 4);
+    testIntegerObject(result.elements[2], 6);
+});
+
+test("test array index expressions", () => {
+    const tests: [string, number | null][] = [
+        ["[1, 2, 3][0]", 1],
+        ["[1, 2, 3][1]", 2],
+        ["[1, 2, 3][2]", 3],
+        ["let i = 0; [1][i]", 1],
+        ["[1, 2, 3][1 + 1]", 3],
+        ["let myArray = [1, 2, 3]; myArray[2];", 3],
+        ["let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];", 6],
+        ["let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]", 2],
+        ["[1, 2, 3][3]", null],
+        ["[1, 2, 3][-1]", null],
+    ];
+
+    tests.forEach(([input, expected]) => {
+        const evaluated = testEval(input);
+
+        if (typeof expected === "number") {
+            testIntegerObject(evaluated, expected);
+        } else {
+            testNullObject(evaluated);
         }
     });
 });
