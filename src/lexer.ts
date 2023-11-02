@@ -110,6 +110,12 @@ export class Lexer {
             case ",":
                 token = newToken(TokenType.COMMA, this.char);
                 break;
+            case "[":
+                token = newToken(TokenType.LEFT_BRACKET, this.char);
+                break;
+            case "]":
+                token = newToken(TokenType.RIGHT_BRACKET, this.char);
+                break;
             case "{":
                 token = newToken(TokenType.LEFT_BRACE, this.char);
                 break;

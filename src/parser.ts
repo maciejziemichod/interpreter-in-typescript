@@ -1,4 +1,5 @@
 import {
+    ArrayLiteral,
     BlockStatement,
     BooleanLiteral,
     CallExpression,
@@ -7,6 +8,7 @@ import {
     FunctionLiteral,
     Identifier,
     IfExpression,
+    IndexExpression,
     InfixExpression,
     IntegerLiteral,
     LetStatement,
@@ -30,6 +32,7 @@ const Precendence = {
     PRODUCT: 5, // *
     PREFIX: 6, // -X or !X
     CALL: 7, // myFunction(X)
+    INDEX: 8,
 } as const;
 type PrecendenceValue = (typeof Precendence)[keyof typeof Precendence];
 
@@ -43,6 +46,7 @@ const precedences = {
     [TokenType.SLASH]: Precendence.PRODUCT,
     [TokenType.ASTERISK]: Precendence.PRODUCT,
     [TokenType.LEFT_PARENTHESIS]: Precendence.CALL,
+    [TokenType.LEFT_BRACKET]: Precendence.INDEX,
 } as const;
 
 export class Parser {
@@ -66,14 +70,17 @@ export class Parser {
         this.parsePrefixExpression = this.parsePrefixExpression.bind(this);
         this.parseInfixExpression = this.parseInfixExpression.bind(this);
         this.parseBooleanLiteral = this.parseBooleanLiteral.bind(this);
+        this.parseArrayLiteral = this.parseArrayLiteral.bind(this);
         this.parseGroupedExpression = this.parseGroupedExpression.bind(this);
         this.parseIfExpression = this.parseIfExpression.bind(this);
         this.parseFunctionLiteral = this.parseFunctionLiteral.bind(this);
         this.parseCallExpression = this.parseCallExpression.bind(this);
+        this.parseIndexExpression = this.parseIndexExpression.bind(this);
 
         this.registerPrefix(TokenType.IDENTIFIER, this.parseIdentifier);
         this.registerPrefix(TokenType.INT, this.parseIntegerLiteral);
         this.registerPrefix(TokenType.STRING, this.parseStringLiteral);
+        this.registerPrefix(TokenType.LEFT_BRACKET, this.parseArrayLiteral);
         this.registerPrefix(TokenType.BANG, this.parsePrefixExpression);
         this.registerPrefix(TokenType.MINUS, this.parsePrefixExpression);
         this.registerPrefix(TokenType.TRUE, this.parseBooleanLiteral);
@@ -97,6 +104,7 @@ export class Parser {
             TokenType.LEFT_PARENTHESIS,
             this.parseCallExpression,
         );
+        this.registerInfix(TokenType.LEFT_BRACKET, this.parseIndexExpression);
 
         this.nextToken();
         this.nextToken();
@@ -288,6 +296,15 @@ export class Parser {
         return new StringLiteral(this.currentToken, this.currentToken.literal);
     }
 
+    private parseArrayLiteral(): Expression | null {
+        const arrayLiteral = new ArrayLiteral(this.currentToken);
+        const elements = this.parseExpressionList(TokenType.RIGHT_BRACKET);
+
+        arrayLiteral.elements = elements ?? [];
+
+        return arrayLiteral;
+    }
+
     private parsePrefixExpression(): Expression | null {
         const expression = new PrefixExpression(
             this.currentToken,
@@ -401,45 +418,10 @@ export class Parser {
         const callExpression = new CallExpression(
             this.currentToken,
             expression,
-            this.parseCallArguments(),
+            this.parseExpressionList(TokenType.RIGHT_PARENTHESIS),
         );
 
         return callExpression;
-    }
-
-    private parseCallArguments(): Expression[] | null {
-        const callArguments: Expression[] = [];
-
-        if (this.peekTokenIs(TokenType.RIGHT_PARENTHESIS)) {
-            this.nextToken();
-
-            return callArguments;
-        }
-
-        this.nextToken();
-
-        const firstArgument = this.parseExpression(Precendence.LOWEST);
-
-        if (firstArgument !== null) {
-            callArguments.push(firstArgument);
-        }
-
-        while (this.peekTokenIs(TokenType.COMMA)) {
-            this.nextToken();
-            this.nextToken();
-
-            const nextArgument = this.parseExpression(Precendence.LOWEST);
-
-            if (nextArgument !== null) {
-                callArguments.push(nextArgument);
-            }
-        }
-
-        if (!this.expectPeek(TokenType.RIGHT_PARENTHESIS)) {
-            return null;
-        }
-
-        return callArguments;
     }
 
     private parseFunctionParameters(): Identifier[] | null {
@@ -497,6 +479,56 @@ export class Parser {
         }
 
         return blockStatement;
+    }
+
+    private parseExpressionList(endToken: TokenItem): Expression[] | null {
+        const list: Expression[] = [];
+
+        if (this.peekTokenIs(endToken)) {
+            this.nextToken();
+            return list;
+        }
+
+        this.nextToken();
+
+        const expression = this.parseExpression(Precendence.LOWEST);
+        if (expression !== null) {
+            list.push(expression);
+        }
+
+        while (this.peekTokenIs(TokenType.COMMA)) {
+            this.nextToken();
+            this.nextToken();
+
+            const expression = this.parseExpression(Precendence.LOWEST);
+            if (expression !== null) {
+                list.push(expression);
+            }
+        }
+
+        if (!this.expectPeek(endToken)) {
+            return null;
+        }
+
+        return list;
+    }
+
+    private parseIndexExpression(left: Expression | null): Expression | null {
+        const token = this.currentToken;
+
+        this.nextToken();
+
+        const right = this.parseExpression(Precendence.LOWEST);
+
+        if (
+            !this.expectPeek(TokenType.RIGHT_BRACKET) ||
+            left === null ||
+            right === null
+        ) {
+            return null;
+        }
+
+        return new IndexExpression(token, left, right);
     }
 
     private getPeekPrecedence(): PrecendenceValue {

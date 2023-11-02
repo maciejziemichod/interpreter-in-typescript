@@ -24,6 +24,8 @@ export const TokenType = {
 
     LEFT_PARENTHESIS: "(",
     RIGHT_PARENTHESIS: ")",
+    LEFT_BRACKET: "[",
+    RIGHT_BRACKET: "]",
     LEFT_BRACE: "{",
     RIGHT_BRACE: "}",
 

@@ -1,4 +1,5 @@
 import {
+    ArrayLiteral,
     AstNode,
     BlockStatement,
     BooleanLiteral,
@@ -8,6 +9,7 @@ import {
     FunctionLiteral,
     Identifier,
     IfExpression,
+    IndexExpression,
     InfixExpression,
     IntegerLiteral,
     LetStatement,
@@ -19,6 +21,7 @@ import {
 import { builtins } from "./builtins";
 import { Environment } from "./environment";
 import {
+    ArrayObj,
     BooleanObj,
     Builtin,
     ErrorObj,
@@ -72,8 +75,30 @@ export function evalNode(
         return new StringObj(node.value);
     } else if (node instanceof BooleanLiteral) {
         return nativeBooleanToBooleanObject(node.value);
+    } else if (node instanceof ArrayLiteral) {
+        const elements = evalExpressions(node.elements, environment);
+
+        if (elements.length === 1 && elements[0] instanceof ErrorObj) {
+            return elements[0];
+        }
+
+        return new ArrayObj(elements);
     } else if (node instanceof FunctionLiteral) {
         return new FunctionObj(node.parameters, node.body, environment);
+    } else if (node instanceof IndexExpression) {
+        const left = evalNode(node.left, environment);
+
+        if (left instanceof ErrorObj) {
+            return left;
+        }
+
+        const index = evalNode(node.index, environment);
+
+        if (index instanceof ErrorObj) {
+            return left;
+        }
+
+        return evalIndexExpression(left, index);
     } else if (node instanceof CallExpression) {
         const fn = evalNode(node.expression, environment);
 
@@ -302,8 +327,8 @@ function evalIdentifier(
 function evalExpressions(
     expressions: Expression[],
     environment: Environment,
-): Array<ValueObject | null> {
-    const result: Array<ValueObject | null> = [];
+): ValueObject[] {
+    const result: ValueObject[] = [];
 
     for (const expression of expressions) {
         const evaluated = evalNode(expression, environment);
@@ -312,10 +337,34 @@ function evalExpressions(
             return [evaluated];
         }
 
-        result.push(evaluated);
+        if (evaluated !== null) {
+            result.push(evaluated);
+        }
     }
 
     return result;
+}
+
+function evalIndexExpression(
+    left: ValueObject | null,
+    index: ValueObject | null,
+): ValueObject {
+    if (left instanceof ArrayObj && index instanceof IntegerObj) {
+        return evalArrayIndexExpression(left, index);
+    } else {
+        return new ErrorObj(`index operator not supported: ${left?.type()}`);
+    }
+}
+
+function evalArrayIndexExpression(
+    left: ArrayObj,
+    index: IntegerObj,
+): ValueObject {
+    if (index.value > left.elements.length - 1 || index.value < 0) {
+        return NULL_OBJ;
+    }
+
+    return left.elements[index.value];
 }
 
 function applyFunction(

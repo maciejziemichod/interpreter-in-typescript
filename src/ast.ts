@@ -282,6 +282,27 @@ export class FunctionLiteral implements Expression {
     }
 }
 
+export class ArrayLiteral implements Expression {
+    public token: Token;
+    public elements: Expression[] = [];
+
+    constructor(token: Token) {
+        this.token = token;
+    }
+
+    public expressionNode(): void {}
+
+    public getTokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    public string(): string {
+        return `[${this.elements
+            .map((element) => element.string())
+            .join(", ")}]`;
+    }
+}
+
 export class CallExpression implements Expression {
     public token: Token; // '(' token
     public expression: Expression | null; // identifier or function literal
@@ -307,5 +328,27 @@ export class CallExpression implements Expression {
         return `${this.expression?.string()}(${this.arguments
             ?.map((argument) => argument.string())
             .join(", ")})`;
+    }
+}
+
+export class IndexExpression implements Expression {
+    public token: Token; // '[' token
+    public left: Expression;
+    public index: Expression;
+
+    constructor(token: Token, left: Expression, index: Expression) {
+        this.token = token;
+        this.left = left;
+        this.index = index;
+    }
+
+    public expressionNode(): void {}
+
+    public getTokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    public string(): string {
+        return `(${this.left.string()}}[${this.index.string()}])`;
     }
 }

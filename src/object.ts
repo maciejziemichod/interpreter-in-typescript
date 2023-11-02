@@ -10,6 +10,7 @@ export const ObjectType = {
     ERROR_OBJ: "ERROR",
     FUNCTION_OBJ: "FUNCTION",
     BUILTIN_OBJ: "BUILTIN",
+    ARRAY_OBJ: "ARRAY",
 } as const;
 
 type ObjectTypeItem = (typeof ObjectType)[keyof typeof ObjectType];
@@ -152,5 +153,23 @@ export class Builtin implements ValueObject {
 
     public inspect(): string {
         return "builtin function";
+    }
+}
+
+export class ArrayObj implements ValueObject {
+    public elements: ValueObject[];
+
+    constructor(elements: ValueObject[] = []) {
+        this.elements = elements;
+    }
+
+    public type(): ObjectTypeItem {
+        return ObjectType.ARRAY_OBJ;
+    }
+
+    public inspect(): string {
+        return `[${this.elements
+            .map((element) => element.inspect())
+            .join(", ")}]`;
     }
 }
