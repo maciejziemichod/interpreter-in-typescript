@@ -127,4 +127,14 @@ export const builtins = {
 
         return new ArrayObj([...array.elements, element]);
     }),
+
+    puts: new Builtin(function (
+        ...args: Array<ValueObject | null>
+    ): ValueObject {
+        args.forEach((value) => {
+            console.log(value?.inspect());
+        });
+
+        return NULL_OBJ;
+    }),
 } as const;

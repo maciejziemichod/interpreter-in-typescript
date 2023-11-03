@@ -322,6 +322,7 @@ test("test builtin functions", () => {
         [`rest(1)`, "argument to `rest` must be ARRAY, got INTEGER"],
         [`push([], 1)`, [1]],
         [`push(1, 1)`, "first argument to `push` must be ARRAY, got INTEGER"],
+        [`puts("hello", "world")`, null],
     ];
 
     tests.forEach(([input, expected]) => {
