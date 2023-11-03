@@ -11,6 +11,7 @@ export const ObjectType = {
     FUNCTION_OBJ: "FUNCTION",
     BUILTIN_OBJ: "BUILTIN",
     ARRAY_OBJ: "ARRAY",
+    MAP_OBJ: "MAP",
 } as const;
 
 type ObjectTypeItem = (typeof ObjectType)[keyof typeof ObjectType];
@@ -171,5 +172,31 @@ export class ArrayObj implements ValueObject {
         return `[${this.elements
             .map((element) => element.inspect())
             .join(", ")}]`;
+    }
+}
+
+export class MapObj implements ValueObject {
+    public pairs;
+
+    constructor(pairs = new Map<number | string | boolean, ValueObject>()) {
+        this.pairs = pairs;
+    }
+
+    public type(): ObjectTypeItem {
+        return ObjectType.MAP_OBJ;
+    }
+
+    public inspect(): string {
+        const pairs = [];
+
+        for (const [key, value] of this.pairs) {
+            pairs.push(
+                `${
+                    typeof key === "string" ? `"${key}"` : key
+                }: ${value.inspect()}`,
+            );
+        }
+
+        return `{${pairs.join(", ")}}`;
     }
 }

@@ -303,6 +303,31 @@ export class ArrayLiteral implements Expression {
     }
 }
 
+export class MapLiteral implements Expression {
+    public token: Token;
+    public pairs = new Map<Expression, Expression>();
+
+    constructor(token: Token) {
+        this.token = token;
+    }
+
+    public expressionNode(): void {}
+
+    public getTokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    public string(): string {
+        const pairs = [];
+
+        for (const [key, value] of this.pairs) {
+            pairs.push(`${key.string()}: ${value.string()}`);
+        }
+
+        return `{${pairs.join(", ")}}`;
+    }
+}
+
 export class CallExpression implements Expression {
     public token: Token; // '(' token
     public expression: Expression | null; // identifier or function literal

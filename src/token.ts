@@ -21,6 +21,7 @@ export const TokenType = {
 
     COMMA: ",",
     SEMICOLON: ";",
+    COLON: ":",
 
     LEFT_PARENTHESIS: "(",
     RIGHT_PARENTHESIS: ")",

@@ -13,6 +13,7 @@ import {
     InfixExpression,
     IntegerLiteral,
     LetStatement,
+    MapLiteral,
     NullLiteral,
     PrefixExpression,
     Program,
@@ -28,6 +29,7 @@ import {
     ErrorObj,
     FunctionObj,
     IntegerObj,
+    MapObj,
     NullObj,
     ReturnValue,
     StringObj,
@@ -88,6 +90,8 @@ export function evalNode(
         return new FunctionObj(node.parameters, node.body, environment);
     } else if (node instanceof NullLiteral) {
         return NULL_OBJ;
+    } else if (node instanceof MapLiteral) {
+        return evalMapLiteral(node, environment);
     } else if (node instanceof IndexExpression) {
         const left = evalNode(node.left, environment);
 
@@ -354,6 +358,8 @@ function evalIndexExpression(
 ): ValueObject {
     if (left instanceof ArrayObj && index instanceof IntegerObj) {
         return evalArrayIndexExpression(left, index);
+    } else if (left instanceof MapObj) {
+        return evalMapIndexExpression(left, index);
     } else {
         return new ErrorObj(`index operator not supported: ${left?.type()}`);
     }
@@ -368,6 +374,62 @@ function evalArrayIndexExpression(
     }
 
     return left.elements[index.value];
+}
+
+function evalMapLiteral(
+    node: MapLiteral,
+    environment: Environment,
+): ValueObject {
+    const pairs = new Map<number | string | boolean, ValueObject>();
+
+    for (const [key, value] of node.pairs) {
+        const keyObj = evalNode(key, environment);
+
+        if (keyObj instanceof ErrorObj) {
+            return keyObj;
+        }
+
+        if (
+            !(keyObj instanceof IntegerObj) &&
+            !(keyObj instanceof StringObj) &&
+            !(keyObj instanceof BooleanObj)
+        ) {
+            return new ErrorObj(`unusable as map key: ${keyObj?.type()}`);
+        }
+
+        const valueObj = evalNode(value, environment);
+
+        if (valueObj instanceof ErrorObj) {
+            return valueObj;
+        }
+
+        if (valueObj !== null) {
+            pairs.set(keyObj.value, valueObj);
+        }
+    }
+
+    return new MapObj(pairs);
+}
+
+function evalMapIndexExpression(
+    map: MapObj,
+    index: ValueObject | null,
+): ValueObject {
+    if (
+        !(index instanceof IntegerObj) &&
+        !(index instanceof StringObj) &&
+        !(index instanceof BooleanObj)
+    ) {
+        return new ErrorObj(`unusable as map key: ${index?.type()}`);
+    }
+
+    const value = map.pairs.get(index.value);
+
+    if (value === undefined) {
+        return NULL_OBJ;
+    }
+
+    return value;
 }
 
 function applyFunction(

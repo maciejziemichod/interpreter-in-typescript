@@ -12,6 +12,7 @@ import {
     InfixExpression,
     IntegerLiteral,
     LetStatement,
+    MapLiteral,
     NullLiteral,
     PrefixExpression,
     Program,
@@ -78,6 +79,7 @@ export class Parser {
         this.parseCallExpression = this.parseCallExpression.bind(this);
         this.parseIndexExpression = this.parseIndexExpression.bind(this);
         this.parseNullLiteral = this.parseNullLiteral.bind(this);
+        this.parseMapLiteral = this.parseMapLiteral.bind(this);
 
         this.registerPrefix(TokenType.IDENTIFIER, this.parseIdentifier);
         this.registerPrefix(TokenType.INT, this.parseIntegerLiteral);
@@ -94,6 +96,7 @@ export class Parser {
         this.registerPrefix(TokenType.IF, this.parseIfExpression);
         this.registerPrefix(TokenType.FUNCTION, this.parseFunctionLiteral);
         this.registerPrefix(TokenType.NULL, this.parseNullLiteral);
+        this.registerPrefix(TokenType.LEFT_BRACE, this.parseMapLiteral);
 
         this.registerInfix(TokenType.PLUS, this.parseInfixExpression);
         this.registerInfix(TokenType.MINUS, this.parseInfixExpression);
@@ -310,6 +313,41 @@ export class Parser {
 
     private parseNullLiteral(): Expression {
         return new NullLiteral(this.currentToken);
+    }
+
+    private parseMapLiteral(): Expression | null {
+        const map = new MapLiteral(this.currentToken);
+
+        while (!this.peekTokenIs(TokenType.RIGHT_BRACE)) {
+            this.nextToken();
+
+            const key = this.parseExpression(Precendence.LOWEST);
+
+            if (!this.expectPeek(TokenType.COLON)) {
+                return null;
+            }
+
+            this.nextToken();
+
+            const value = this.parseExpression(Precendence.LOWEST);
+
+            if (key !== null && value !== null) {
+                map.pairs.set(key, value);
+            }
+
+            if (
+                !this.peekTokenIs(TokenType.RIGHT_BRACE) &&
+                !this.expectPeek(TokenType.COMMA)
+            ) {
+                return null;
+            }
+        }
+
+        if (!this.expectPeek(TokenType.RIGHT_BRACE)) {
+            return null;
+        }
+
+        return map;
     }
 
     private parsePrefixExpression(): Expression | null {
