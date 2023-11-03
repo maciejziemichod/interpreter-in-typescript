@@ -12,6 +12,7 @@ import {
     InfixExpression,
     IntegerLiteral,
     LetStatement,
+    NullLiteral,
     PrefixExpression,
     Program,
     ReturnStatement,
@@ -76,6 +77,7 @@ export class Parser {
         this.parseFunctionLiteral = this.parseFunctionLiteral.bind(this);
         this.parseCallExpression = this.parseCallExpression.bind(this);
         this.parseIndexExpression = this.parseIndexExpression.bind(this);
+        this.parseNullLiteral = this.parseNullLiteral.bind(this);
 
         this.registerPrefix(TokenType.IDENTIFIER, this.parseIdentifier);
         this.registerPrefix(TokenType.INT, this.parseIntegerLiteral);
@@ -91,6 +93,7 @@ export class Parser {
         );
         this.registerPrefix(TokenType.IF, this.parseIfExpression);
         this.registerPrefix(TokenType.FUNCTION, this.parseFunctionLiteral);
+        this.registerPrefix(TokenType.NULL, this.parseNullLiteral);
 
         this.registerInfix(TokenType.PLUS, this.parseInfixExpression);
         this.registerInfix(TokenType.MINUS, this.parseInfixExpression);
@@ -303,6 +306,10 @@ export class Parser {
         arrayLiteral.elements = elements ?? [];
 
         return arrayLiteral;
+    }
+
+    private parseNullLiteral(): Expression {
+        return new NullLiteral(this.currentToken);
     }
 
     private parsePrefixExpression(): Expression | null {

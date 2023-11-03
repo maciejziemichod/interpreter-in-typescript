@@ -13,6 +13,7 @@ import {
     InfixExpression,
     IntegerLiteral,
     LetStatement,
+    NullLiteral,
     PrefixExpression,
     Program,
     ReturnStatement,
@@ -85,6 +86,8 @@ export function evalNode(
         return new ArrayObj(elements);
     } else if (node instanceof FunctionLiteral) {
         return new FunctionObj(node.parameters, node.body, environment);
+    } else if (node instanceof NullLiteral) {
+        return NULL_OBJ;
     } else if (node instanceof IndexExpression) {
         const left = evalNode(node.left, environment);
 

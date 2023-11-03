@@ -352,3 +352,22 @@ export class IndexExpression implements Expression {
         return `(${this.left.string()}}[${this.index.string()}])`;
     }
 }
+
+export class NullLiteral implements Expression {
+    public token: Token;
+    public value = null;
+
+    constructor(token: Token) {
+        this.token = token;
+    }
+
+    public expressionNode(): void {}
+
+    public getTokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    public string(): string {
+        return this.token.literal;
+    }
+}
