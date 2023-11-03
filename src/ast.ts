@@ -5,13 +5,9 @@ export interface AstNode {
     string(): string;
 }
 
-export interface Statement extends AstNode {
-    statementNode(): void;
-}
+export interface Statement extends AstNode {}
 
-export interface Expression extends AstNode {
-    expressionNode(): void;
-}
+export interface Expression extends AstNode {}
 
 export class Program implements AstNode {
     public statements: Statement[] = [];
@@ -36,8 +32,6 @@ export class LetStatement implements Statement {
         this.token = token;
     }
 
-    public statementNode(): void {}
-
     public getTokenLiteral(): string {
         return this.token.literal;
     }
@@ -56,8 +50,6 @@ export class ReturnStatement implements Statement {
     constructor(token: Token) {
         this.token = token;
     }
-
-    public statementNode(): void {}
 
     public getTokenLiteral(): string {
         return this.token.literal;
@@ -78,8 +70,6 @@ export class ExpressionStatement implements Statement {
         this.token = token;
     }
 
-    public statementNode(): void {}
-
     public getTokenLiteral(): string {
         return this.token.literal;
     }
@@ -98,8 +88,6 @@ export class Identifier implements Expression {
         this.value = value;
     }
 
-    public expressionNode(): void {}
-
     public getTokenLiteral(): string {
         return this.token.literal;
     }
@@ -116,8 +104,6 @@ export class IntegerLiteral implements Expression {
     constructor(token: Token) {
         this.token = token;
     }
-
-    public expressionNode(): void {}
 
     public getTokenLiteral(): string {
         return this.token.literal;
@@ -137,8 +123,6 @@ export class StringLiteral implements Expression {
         this.value = value;
     }
 
-    public expressionNode(): void {}
-
     public getTokenLiteral(): string {
         return this.token.literal;
     }
@@ -157,8 +141,6 @@ export class PrefixExpression implements Expression {
         this.token = token;
         this.operator = operator;
     }
-
-    public expressionNode(): void {}
 
     public getTokenLiteral(): string {
         return this.token.literal;
@@ -181,8 +163,6 @@ export class InfixExpression implements Expression {
         this.left = left;
     }
 
-    public expressionNode(): void {}
-
     public getTokenLiteral(): string {
         return this.token.literal;
     }
@@ -203,8 +183,6 @@ export class BooleanLiteral implements Expression {
         this.value = value;
     }
 
-    public expressionNode(): void {}
-
     public getTokenLiteral(): string {
         return this.token.literal;
     }
@@ -223,8 +201,6 @@ export class IfExpression implements Expression {
     constructor(token: Token) {
         this.token = token;
     }
-
-    public expressionNode(): void {}
 
     public getTokenLiteral(): string {
         return this.token.literal;
@@ -249,8 +225,6 @@ export class BlockStatement implements Statement {
         this.token = token;
     }
 
-    public statementNode(): void {}
-
     public getTokenLiteral(): string {
         return this.token.literal;
     }
@@ -268,8 +242,6 @@ export class FunctionLiteral implements Expression {
     constructor(token: Token) {
         this.token = token;
     }
-
-    public expressionNode(): void {}
 
     public getTokenLiteral(): string {
         return this.token.literal;
@@ -290,8 +262,6 @@ export class ArrayLiteral implements Expression {
         this.token = token;
     }
 
-    public expressionNode(): void {}
-
     public getTokenLiteral(): string {
         return this.token.literal;
     }
@@ -310,8 +280,6 @@ export class MapLiteral implements Expression {
     constructor(token: Token) {
         this.token = token;
     }
-
-    public expressionNode(): void {}
 
     public getTokenLiteral(): string {
         return this.token.literal;
@@ -343,8 +311,6 @@ export class CallExpression implements Expression {
         this.arguments = callArguments;
     }
 
-    public expressionNode(): void {}
-
     public getTokenLiteral(): string {
         return this.token.literal;
     }
@@ -367,8 +333,6 @@ export class IndexExpression implements Expression {
         this.index = index;
     }
 
-    public expressionNode(): void {}
-
     public getTokenLiteral(): string {
         return this.token.literal;
     }
@@ -385,8 +349,6 @@ export class NullLiteral implements Expression {
     constructor(token: Token) {
         this.token = token;
     }
-
-    public expressionNode(): void {}
 
     public getTokenLiteral(): string {
         return this.token.literal;
