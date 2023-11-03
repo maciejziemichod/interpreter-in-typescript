@@ -16,6 +16,7 @@ import {
     ArrayLiteral,
     IndexExpression,
     NullLiteral,
+    MapLiteral,
 } from "./ast";
 import { Lexer } from "./lexer";
 import { Parser } from "./parser";
@@ -725,6 +726,159 @@ test("test call expression parameters parsing", () => {
                 expectedArgument,
             );
         });
+    });
+});
+
+test("test parsing map literals string keys", () => {
+    const input = `{"one": 1, "two": 2, "three": 3}`;
+
+    const lexer = new Lexer(input);
+    const parser = new Parser(lexer);
+
+    const program = parser.parseProgram();
+
+    checkParserErrors(parser);
+
+    expect(program.statements.length).toBe(1);
+
+    const statement = program.statements[0];
+
+    expect(statement).toBeInstanceOf(ExpressionStatement);
+
+    const map = (statement as ExpressionStatement).expression as MapLiteral;
+
+    expect(map).toBeInstanceOf(MapLiteral);
+    expect(map.pairs.size).toBe(3);
+
+    const expected = {
+        one: 1,
+        two: 2,
+        three: 3,
+    };
+
+    map.pairs.forEach((value, key) => {
+        expect(key).toBeInstanceOf(StringLiteral);
+
+        const expectedValue =
+            expected[(key as StringLiteral).string() as keyof typeof expected];
+
+        expect(expectedValue).toBeTruthy();
+        testIntegerLiteral(value, expectedValue);
+    });
+});
+
+test("test parsing map literals boolean keys", () => {
+    const input = `{true: 1, false: 2}`;
+
+    const lexer = new Lexer(input);
+    const parser = new Parser(lexer);
+
+    const program = parser.parseProgram();
+
+    checkParserErrors(parser);
+
+    expect(program.statements.length).toBe(1);
+
+    const statement = program.statements[0];
+
+    expect(statement).toBeInstanceOf(ExpressionStatement);
+
+    const map = (statement as ExpressionStatement).expression as MapLiteral;
+
+    expect(map).toBeInstanceOf(MapLiteral);
+    expect(map.pairs.size).toBe(2);
+
+    map.pairs.forEach((value, key) => {
+        expect(key).toBeInstanceOf(BooleanLiteral);
+        testIntegerLiteral(value, (key as BooleanLiteral).value ? 1 : 2);
+    });
+});
+
+test("test parsing map literals integer keys", () => {
+    const input = `{1: 1, 2: 2, 3: 3}`;
+
+    const lexer = new Lexer(input);
+    const parser = new Parser(lexer);
+
+    const program = parser.parseProgram();
+
+    checkParserErrors(parser);
+
+    expect(program.statements.length).toBe(1);
+
+    const statement = program.statements[0];
+
+    expect(statement).toBeInstanceOf(ExpressionStatement);
+
+    const map = (statement as ExpressionStatement).expression as MapLiteral;
+
+    expect(map).toBeInstanceOf(MapLiteral);
+    expect(map.pairs.size).toBe(3);
+
+    map.pairs.forEach((value, key) => {
+        expect(key).toBeInstanceOf(IntegerLiteral);
+        // in this test key is equal to value
+        testIntegerLiteral(value, (key as IntegerLiteral).value);
+    });
+});
+
+test("test parsing empty map literal", () => {
+    const input = `{}`;
+
+    const lexer = new Lexer(input);
+    const parser = new Parser(lexer);
+
+    const program = parser.parseProgram();
+
+    checkParserErrors(parser);
+
+    expect(program.statements.length).toBe(1);
+
+    const statement = program.statements[0];
+
+    expect(statement).toBeInstanceOf(ExpressionStatement);
+
+    const map = (statement as ExpressionStatement).expression as MapLiteral;
+
+    expect(map).toBeInstanceOf(MapLiteral);
+    expect(map.pairs.size).toBe(0);
+});
+
+test("test parsing map literals with expressions", () => {
+    const input = `{"one": 0 + 1, "two": 10 - 8, "three": 15 / 5}`;
+
+    const lexer = new Lexer(input);
+    const parser = new Parser(lexer);
+
+    const program = parser.parseProgram();
+
+    checkParserErrors(parser);
+
+    expect(program.statements.length).toBe(1);
+
+    const statement = program.statements[0];
+
+    expect(statement).toBeInstanceOf(ExpressionStatement);
+
+    const map = (statement as ExpressionStatement).expression as MapLiteral;
+
+    expect(map).toBeInstanceOf(MapLiteral);
+    expect(map.pairs.size).toBe(3);
+
+    const tests = {
+        one: (e: Expression) => testInfixExpression(e, 0, "+", 1),
+        two: (e: Expression) => testInfixExpression(e, 10, "-", 8),
+        three: (e: Expression) => testInfixExpression(e, 15, "/", 5),
+    };
+
+    map.pairs.forEach((value, key) => {
+        expect(key).toBeInstanceOf(StringLiteral);
+
+        const testFunction =
+            tests[(key as StringLiteral).string() as keyof typeof tests];
+
+        expect(testFunction).toBeDefined();
+        testFunction(value);
     });
 });
 

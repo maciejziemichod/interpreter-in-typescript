@@ -6,6 +6,7 @@ import {
     ErrorObj,
     FunctionObj,
     IntegerObj,
+    MapObj,
     NullObj,
     StringObj,
     ValueObject,
@@ -226,6 +227,7 @@ if (10 > 1) {
         [`"Hello" - "World"`, "unknown operator: STRING - STRING"],
         [`"Hello" / "World"`, "unknown operator: STRING / STRING"],
         ["999[1]", "index operator not supported: INTEGER"],
+        [`{"name": "Monkey"}[fn(x) { x }];`, "unusable as map key: FUNCTION"],
     ];
 
     tests.forEach(([input, expectedMessage]) => {
@@ -400,6 +402,60 @@ test("test null literal", () => {
     const evaluated = testEval(input);
 
     testNullObject(evaluated);
+});
+
+test("test map literals", () => {
+    const input = `let two = "two";
+{
+    "one": 10 - 9,
+    two: 1 + 1,
+    "thr" + "ee": 6 / 2,
+    4: 4,
+    true: 5,
+    false: 6
+}`;
+
+    const evaluated = testEval(input);
+    expect(evaluated).toBeInstanceOf(MapObj);
+
+    const map = evaluated as MapObj;
+    const expected = new Map<string | number | boolean, number>([
+        ["one", 1],
+        ["two", 2],
+        ["three", 3],
+        [4, 4],
+        [true, 5],
+        [false, 6],
+    ]);
+
+    expect(map.pairs.size).toBe(expected.size);
+
+    expected.forEach((value, key) => {
+        expect(map.pairs.has(key)).toBe(true);
+        testIntegerObject(map.pairs.get(key) as ValueObject, value);
+    });
+});
+
+test("test map index expressions", () => {
+    const tests: [string, number | null][] = [
+        [`{"foo": 5}["foo"]`, 5],
+        [`{"foo": 5}["bar"]`, null],
+        [`let key = "foo"; {"foo": 5}[key]`, 5],
+        [`{}["foo"]`, null],
+        [`{5: 5}[5]`, 5],
+        [`{true: 5}[true]`, 5],
+        [`{false: 5}[false]`, 5],
+    ];
+
+    tests.forEach(([input, expected]) => {
+        const evaluated = testEval(input);
+
+        if (expected === null) {
+            testNullObject(evaluated);
+        } else {
+            testIntegerObject(evaluated, expected);
+        }
+    });
 });
 
 function testEval(input: string): ValueObject | null {

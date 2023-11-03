@@ -25,6 +25,7 @@ if (5 < 10) {
 "foo bar"
 [1, 2];
 null;
+{"foo": "bar"};
 `;
 
     const tests: [TokenItem, string][] = [
@@ -110,6 +111,12 @@ null;
         [TokenType.RIGHT_BRACKET, "]"],
         [TokenType.SEMICOLON, ";"],
         [TokenType.NULL, "null"],
+        [TokenType.SEMICOLON, ";"],
+        [TokenType.LEFT_BRACE, "{"],
+        [TokenType.STRING, "foo"],
+        [TokenType.COLON, ":"],
+        [TokenType.STRING, "bar"],
+        [TokenType.RIGHT_BRACE, "}"],
         [TokenType.SEMICOLON, ";"],
         [TokenType.EOF, ""],
     ];
