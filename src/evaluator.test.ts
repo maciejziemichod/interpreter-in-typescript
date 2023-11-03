@@ -87,6 +87,8 @@ test("test eval boolean expressions", () => {
         ["true == false", false],
         ["true != false", true],
         ["false != true", true],
+        ["null == null", true],
+        ["null != null", false],
         ["(1 < 2) == true", true],
         ["(1 < 2) == false", false],
         ["(1 > 2) == true", false],
@@ -108,12 +110,14 @@ test("test bang operator", () => {
         ["!0", true],
         [`!"hello"`, false],
         [`!""`, true],
+        ["!null", true],
         ["!!true", true],
         ["!!false", false],
         ["!!5", true],
         ["!!0", false],
         [`!!"hello"`, true],
         [`!!""`, false],
+        ["!!null", false],
     ];
 
     tests.forEach(([input, expected]) => {
@@ -388,6 +392,14 @@ test("test array index expressions", () => {
             testNullObject(evaluated);
         }
     });
+});
+
+test("test null literal", () => {
+    const input = "null";
+
+    const evaluated = testEval(input);
+
+    testNullObject(evaluated);
 });
 
 function testEval(input: string): ValueObject | null {

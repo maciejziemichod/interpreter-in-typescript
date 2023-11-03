@@ -15,6 +15,7 @@ import {
     StringLiteral,
     ArrayLiteral,
     IndexExpression,
+    NullLiteral,
 } from "./ast";
 import { Lexer } from "./lexer";
 import { Parser } from "./parser";
@@ -24,6 +25,7 @@ test("test let statement", () => {
         ["let x = 5;", "x", 5],
         ["let y = true;", "y", true],
         ["let foobar = y;", "foobar", "y"],
+        ["let z = null;", "z", null],
     ];
 
     tests.forEach(([input, expectedIdentifier, expectedValue]) => {
@@ -247,11 +249,12 @@ test("test parsing index expressions", () => {
 });
 
 test("test parsing prefix expressions", () => {
-    const tests: [string, string, number | boolean][] = [
+    const tests: [string, string, number | boolean | null][] = [
         ["!5", "!", 5],
         ["-15", "-", 15],
         ["!true;", "!", true],
         ["!false;", "!", false],
+        ["!null;", "!", null],
     ];
 
     tests.forEach(([input, operator, integerValue]) => {
@@ -289,7 +292,12 @@ test("test parsing prefix expressions", () => {
 });
 
 test("test parsing infix expressions", () => {
-    const tests: [string, number | boolean, string, number | boolean][] = [
+    const tests: [
+        string,
+        number | boolean | null,
+        string,
+        number | boolean | null,
+    ][] = [
         ["5 + 5;", 5, "+", 5],
         ["5 - 5;", 5, "-", 5],
         ["5 * 5;", 5, "*", 5],
@@ -301,6 +309,7 @@ test("test parsing infix expressions", () => {
         ["true == true", true, "==", true],
         ["true != false", true, "!=", false],
         ["false == false", false, "==", false],
+        ["null == null", null, "==", null],
     ];
 
     tests.forEach(([input, leftValue, operator, rightValue]) => {
@@ -413,6 +422,38 @@ test("test boolean literal expressions", () => {
 
         expect(booleanLiteral.value).toBe(expectedBoolean);
     });
+});
+
+test("test null literal expressions", () => {
+    const input = "null;";
+
+    const lexer = new Lexer(input);
+    const parser = new Parser(lexer);
+
+    const program = parser.parseProgram();
+
+    checkParserErrors(parser);
+    expect(program.statements.length).toBe(1);
+
+    const expression = program.statements[0];
+    const isStatementExpression = expression instanceof ExpressionStatement;
+
+    expect(isStatementExpression).toBe(true);
+
+    if (!isStatementExpression) {
+        return;
+    }
+
+    const nullLiteral = expression.expression;
+    const isExpressionNullLiteral = nullLiteral instanceof NullLiteral;
+
+    expect(isExpressionNullLiteral).toBe(true);
+
+    if (!isExpressionNullLiteral) {
+        return;
+    }
+
+    expect(nullLiteral.value).toBeNull();
 });
 
 test("test if expressions", () => {
@@ -745,9 +786,13 @@ function testLiteralExpression(
             testBooleanLiteral(expression, expected);
             break;
         default:
-            throw new Error(
-                `type of expression not handled, got ${typeof expected}`,
-            );
+            if (expected === null) {
+                expect(expression).toBeInstanceOf(NullLiteral);
+            } else {
+                throw new Error(
+                    `type of expression not handled, got ${typeof expected}`,
+                );
+            }
     }
 }
 

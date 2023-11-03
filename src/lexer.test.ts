@@ -24,6 +24,7 @@ if (5 < 10) {
 "foobar"
 "foo bar"
 [1, 2];
+null;
 `;
 
     const tests: [TokenItem, string][] = [
@@ -107,6 +108,8 @@ if (5 < 10) {
         [TokenType.COMMA, ","],
         [TokenType.INT, "2"],
         [TokenType.RIGHT_BRACKET, "]"],
+        [TokenType.SEMICOLON, ";"],
+        [TokenType.NULL, "null"],
         [TokenType.SEMICOLON, ";"],
         [TokenType.EOF, ""],
     ];
