@@ -79,35 +79,47 @@ export class NullObj implements ValueObject {
     }
 }
 
-export class ReturnValue implements ValueObject {
-    public value: ValueObject | null;
+export class ArrayObj implements ValueObject {
+    public elements: ValueObject[];
 
-    constructor(value: ValueObject | null) {
-        this.value = value;
+    constructor(elements: ValueObject[] = []) {
+        this.elements = elements;
     }
 
     public type(): ObjectTypeItem {
-        return ObjectType.RETURN_VALUE_OBJ;
+        return ObjectType.ARRAY_OBJ;
     }
 
     public inspect(): string {
-        return this.value === null ? "null" : this.value.inspect();
+        return `[${this.elements
+            .map((element) => element.inspect())
+            .join(", ")}]`;
     }
 }
 
-export class ErrorObj implements ValueObject {
-    public message: string;
+export class MapObj implements ValueObject {
+    public pairs;
 
-    constructor(message: string) {
-        this.message = message;
+    constructor(pairs = new Map<number | string | boolean, ValueObject>()) {
+        this.pairs = pairs;
     }
 
     public type(): ObjectTypeItem {
-        return ObjectType.ERROR_OBJ;
+        return ObjectType.MAP_OBJ;
     }
 
     public inspect(): string {
-        return `ERROR: ${this.message}`;
+        const pairs = [];
+
+        for (const [key, value] of this.pairs) {
+            pairs.push(
+                `${
+                    typeof key === "string" ? `"${key}"` : key
+                }: ${value.inspect()}`,
+            );
+        }
+
+        return `{${pairs.join(", ")}}`;
     }
 }
 
@@ -157,46 +169,34 @@ export class Builtin implements ValueObject {
     }
 }
 
-export class ArrayObj implements ValueObject {
-    public elements: ValueObject[];
+export class ReturnValue implements ValueObject {
+    public value: ValueObject | null;
 
-    constructor(elements: ValueObject[] = []) {
-        this.elements = elements;
+    constructor(value: ValueObject | null) {
+        this.value = value;
     }
 
     public type(): ObjectTypeItem {
-        return ObjectType.ARRAY_OBJ;
+        return ObjectType.RETURN_VALUE_OBJ;
     }
 
     public inspect(): string {
-        return `[${this.elements
-            .map((element) => element.inspect())
-            .join(", ")}]`;
+        return this.value === null ? "null" : this.value.inspect();
     }
 }
 
-export class MapObj implements ValueObject {
-    public pairs;
+export class ErrorObj implements ValueObject {
+    public message: string;
 
-    constructor(pairs = new Map<number | string | boolean, ValueObject>()) {
-        this.pairs = pairs;
+    constructor(message: string) {
+        this.message = message;
     }
 
     public type(): ObjectTypeItem {
-        return ObjectType.MAP_OBJ;
+        return ObjectType.ERROR_OBJ;
     }
 
     public inspect(): string {
-        const pairs = [];
-
-        for (const [key, value] of this.pairs) {
-            pairs.push(
-                `${
-                    typeof key === "string" ? `"${key}"` : key
-                }: ${value.inspect()}`,
-            );
-        }
-
-        return `{${pairs.join(", ")}}`;
+        return `ERROR: ${this.message}`;
     }
 }
