@@ -182,22 +182,6 @@ function evalPrefixExpression(
     }
 }
 
-function evalBangOperatorExpression(right: ValueObject | null): ValueObject {
-    return isTruthy(right) ? FALSE_OBJ : TRUE_OBJ;
-}
-
-function evalMinusPrefixOperatorExpression(
-    right: ValueObject | null,
-): ValueObject {
-    if (!(right instanceof IntegerObj)) {
-        return new ErrorObj(`unknown operator: -${right?.type()}`);
-    }
-
-    const value = right.value;
-
-    return new IntegerObj(-value);
-}
-
 function evalInfixExpression(
     operator: string,
     left: ValueObject | null,
@@ -278,6 +262,22 @@ function evalStringInfixExpression(
     }
 }
 
+function evalBangOperatorExpression(right: ValueObject | null): ValueObject {
+    return isTruthy(right) ? FALSE_OBJ : TRUE_OBJ;
+}
+
+function evalMinusPrefixOperatorExpression(
+    right: ValueObject | null,
+): ValueObject {
+    if (!(right instanceof IntegerObj)) {
+        return new ErrorObj(`unknown operator: -${right?.type()}`);
+    }
+
+    const value = right.value;
+
+    return new IntegerObj(-value);
+}
+
 function evalIfExpression(
     expression: IfExpression,
     environment: Environment,
@@ -331,6 +331,41 @@ function evalIdentifier(
     return new ErrorObj(`identifier not found: ${node.value}`);
 }
 
+function evalMapLiteral(
+    node: MapLiteral,
+    environment: Environment,
+): ValueObject {
+    const pairs = new Map<number | string | boolean, ValueObject>();
+
+    for (const [key, value] of node.pairs) {
+        const keyObj = evalNode(key, environment);
+
+        if (keyObj instanceof ErrorObj) {
+            return keyObj;
+        }
+
+        if (
+            !(keyObj instanceof IntegerObj) &&
+            !(keyObj instanceof StringObj) &&
+            !(keyObj instanceof BooleanObj)
+        ) {
+            return new ErrorObj(`unusable as map key: ${keyObj?.type()}`);
+        }
+
+        const valueObj = evalNode(value, environment);
+
+        if (valueObj instanceof ErrorObj) {
+            return valueObj;
+        }
+
+        if (valueObj !== null) {
+            pairs.set(keyObj.value, valueObj);
+        }
+    }
+
+    return new MapObj(pairs);
+}
+
 function evalExpressions(
     expressions: Expression[],
     environment: Environment,
@@ -374,41 +409,6 @@ function evalArrayIndexExpression(
     }
 
     return left.elements[index.value];
-}
-
-function evalMapLiteral(
-    node: MapLiteral,
-    environment: Environment,
-): ValueObject {
-    const pairs = new Map<number | string | boolean, ValueObject>();
-
-    for (const [key, value] of node.pairs) {
-        const keyObj = evalNode(key, environment);
-
-        if (keyObj instanceof ErrorObj) {
-            return keyObj;
-        }
-
-        if (
-            !(keyObj instanceof IntegerObj) &&
-            !(keyObj instanceof StringObj) &&
-            !(keyObj instanceof BooleanObj)
-        ) {
-            return new ErrorObj(`unusable as map key: ${keyObj?.type()}`);
-        }
-
-        const valueObj = evalNode(value, environment);
-
-        if (valueObj instanceof ErrorObj) {
-            return valueObj;
-        }
-
-        if (valueObj !== null) {
-            pairs.set(keyObj.value, valueObj);
-        }
-    }
-
-    return new MapObj(pairs);
 }
 
 function evalMapIndexExpression(
